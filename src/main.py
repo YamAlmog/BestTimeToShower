@@ -59,8 +59,8 @@ async def get_total_alerts_count():
 
 
 @app.get("/poorest_city")
-async def get_poorest_city():
-    return alert_aggregator.poorest_city()
+async def get_poorest_area():
+    return alert_aggregator.poorest_area()
 
 
 @app.get("/get_distribution")
@@ -69,3 +69,9 @@ async def get_distribution(settlement: str):
         return alert_aggregator.display_dist(settlement)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+
+@app.get("/get_all_settlement")
+async def get_all_settlement():        
+        response = alert_aggregator.retrieve_all_settlement()
+        return response

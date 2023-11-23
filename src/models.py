@@ -4,5 +4,5 @@ from datetime import time
 
 class AlertsDemand(BaseModel):
     settlement: str 
-    start_time: time
-    end_time: time
+    start_time: str
+    end_time: str

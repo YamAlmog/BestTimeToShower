@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
-
+from datetime import datetime, timedelta
 
 
 class AlertsAggregator:
@@ -59,7 +59,8 @@ class AlertsAggregator:
         if user_settlement_lst != []:
             # Filtered the df by the given settlement lst
             filtered_df = self.df[self.df['data'].isin(user_settlement_lst)]
-            return filtered_df.shape[0]
+            alert_amount = filtered_df.shape[0]
+            return {"message" : f"The total amount of alerts in {settlement} is: {alert_amount}"}
         else:
             raise ValueError("You selected a Settlement that does not exist.")
         
@@ -67,19 +68,22 @@ class AlertsAggregator:
     # This function receives df and count the total amount of alerts in the requested date range
     def total_alerts_count(self):
         total_alerts = self.df.shape[0]
-        return total_alerts
+        return {"message" : f"The total amount of alerts in our country is: {total_alerts}"}
     
     
     # This function receives city, and range of time and returns the distribution of the alarms in quarters of an hour 
-    def create_quarter_hour_column(self, settlement, start_time, end_time):
+    def create_quarter_hour_column(self, settlement, start_time_str, end_time_str):
         settlement_lst= self.create_user_settl_lst(settlement)
-        
+        # Convert input strings to time objects
+        start_time = datetime.strptime(start_time_str, "%H:%M").time()
+        end_time = datetime.strptime(end_time_str, "%H:%M").time()
+
         if settlement_lst != []:
             filtered_df = self.df[self.df['data'].isin(settlement_lst)]
             filtered_df['time'] = pd.to_datetime(filtered_df['time'])
             
             # Filter the deteframe by the start and end time of the user
-            filtered_df = filtered_df[(filtered_df['time'].dt.hour >= start_time) & (filtered_df['time'].dt.hour < end_time)]
+            filtered_df = filtered_df[(filtered_df['time'].dt.time >= start_time) & (filtered_df['time'].dt.time < end_time)]
             
             # Create new column which represent the time of the alarm among 15 minuts 
             filtered_df['quarter_hour'] = filtered_df['time'].dt.minute // 15
@@ -94,17 +98,22 @@ class AlertsAggregator:
         quarter_hour_counts = self.create_quarter_hour_column(settlement, start_time, end_time)
         # Detect the quarter of an hour that appeared the less
         best_time = quarter_hour_counts.idxmin()
-        return (f"The best time to take a shower is at the quarter: {best_time}")
+        return {"mesage" : f"The best time to take a shower is at the quarter: {best_time}"}
     
 
     def worst_time_to_shower(self, settlement, start_time, end_time):
         quarter_hour_counts = self.create_quarter_hour_column(settlement, start_time, end_time)
         # Detect the quarter of an hour that appeared the most
         worst_time = quarter_hour_counts.idxmax()
-        return (f"The worst time to take a shower is at the quarter: {worst_time}")
+        return {"mesage" : f"The worst time to take a shower is at the quarter: {worst_time}"}
     
 
-    def poorest_city(self):
+    def poorest_area(self):
         city_alerts_count = self.df['data'].value_counts()
         poorest_city = city_alerts_count.idxmax()
-        return (f"The city that suffers the most from alarms is:{poorest_city}")
+        return {"message":f"The area that suffers the most from alarms is: {poorest_city}"}
+    
+    def retrieve_all_settlement(self):
+        settlement_df = self.df.drop_duplicates(subset='data')
+        settl_list = settlement_df['data'].tolist()
+        return {"message": f"The settlements in the df are: {settl_list}"}
