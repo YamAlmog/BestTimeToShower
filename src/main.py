@@ -3,7 +3,7 @@ from OrefAlertsRetrieve import OrefAlertsRetrieveData
 from fastapi import FastAPI, HTTPException 
 import pandas as pd
 import requests
-from Errors import RetrieveDataException
+from Errors import RetrieveDataException, WrongSettlementException
 from models import AlertsQueryInput
 from datetime import datetime, timedelta
 app = FastAPI()
@@ -38,6 +38,8 @@ async def find_best_time_to_shower(alerts_demand_obj: AlertsQueryInput):
         return best_time
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except WrongSettlementException as settl_err:
+        raise HTTPException(status_code=401, detail=str(settl_err)) 
     except Exception as ex:
         raise HTTPException(status_code=500, detail=str(ex))
     
@@ -49,6 +51,8 @@ async def find_worst_time_to_shower(alerts_demand_obj: AlertsQueryInput):
         return worst_time
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except WrongSettlementException as settl_err:
+        raise HTTPException(status_code=401, detail=str(settl_err)) 
     except Exception as ex:
         raise HTTPException(status_code=500, detail=str(ex))
     
@@ -62,6 +66,8 @@ async def get_alerts_count(settlement: str):
         raise HTTPException(status_code=400, detail=str(e))
     except requests.exceptions.RequestException as req_err:
         raise HTTPException(status_code=402, detail=str(req_err))
+    except WrongSettlementException as settl_err:
+        raise HTTPException(status_code=401, detail=str(settl_err)) 
     except Exception as ex:
         raise HTTPException(status_code=500, detail=str(ex))
     
@@ -83,6 +89,8 @@ async def get_distribution(settlement: str):
         raise HTTPException(status_code=400, detail=str(e))
     except requests.exceptions.RequestException as req_err:
         raise HTTPException(status_code=402, detail=str(req_err))
+    except WrongSettlementException as settl_err:
+        raise HTTPException(status_code=401, detail=str(settl_err)) 
     except Exception as ex:
         raise HTTPException(status_code=500, detail=str(ex))
     

@@ -31,8 +31,9 @@ class AlertsAggregator:
             elif f"{settlement.lower()} " in item  or f" {settlement.lower()}" in item or settlement.lower() in item :
                 if item not in settl_lst:
                     settl_lst.append(item)
-        raise WrongSettlementException(f"Incorrect settlement, please try again input one of this options: {settl_lst}")
-       
+        if settl_lst != []:
+            raise WrongSettlementException(f"Incorrect settlement, please try again input one of this options: {settl_lst}")
+        return settl_lst
 
     
     # This function use geonames api and return True if the user settlement input is actually exist else returns False
@@ -189,8 +190,7 @@ class AlertsAggregator:
             raise ValueError(e)
         except requests.exceptions.RequestException as req_err:
             raise requests.exceptions.RequestException(f"Error occurred: {req_err}")
-        except Exception as ex:
-            raise Exception(f"Error: {ex}")
+   
     
     # This function use create_quarter_hour_column func to return the worst quarter of an hour to shower in
     def worst_time_to_shower(self, settlement: str, start_time: time, end_time: time):
@@ -207,8 +207,7 @@ class AlertsAggregator:
             raise ValueError(e)
         except requests.exceptions.RequestException as req_err:
             raise requests.exceptions.RequestException(f"Error occurred: {req_err}")
-        except Exception as ex:
-            raise Exception(f"Error: {ex}")
+      
 
     # This function return the area that suffer the most from alerts
     def poorest_area(self):
