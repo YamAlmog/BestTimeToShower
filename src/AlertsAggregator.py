@@ -7,7 +7,11 @@ from models import AlertCountPerDay
 from Errors import WrongSettlementException
 from datetime import time, datetime, timedelta
 import requests
-GEONAMES_URL = "http://api.geonames.org/searchJSON"
+import os
+from dotenv import load_dotenv, dotenv_values
+load_dotenv()
+GEONAMES_URL = os.getenv('GEONAMES_URL')
+
 
 
 class AlertsAggregator:
@@ -83,14 +87,14 @@ class AlertsAggregator:
             else:
                 raise ValueError("You selected a Settlement that does not exist.")
         
-        except requests.exceptions.RequestException as req_err:
-            raise requests.exceptions.RequestException(f"Error occurred: {req_err}")
+        except requests.exceptions.RequestException as ex:
+            raise requests.exceptions.RequestException(f"Error occurred: {ex}")
         
-        except WrongSettlementException as settl_exc:
-            raise WrongSettlementException(settl_exc)
+        except WrongSettlementException as ex:
+            raise WrongSettlementException(ex)
         
-        except ValueError as val_err:
-            raise ValueError(val_err)   
+        except ValueError as ex:
+            raise ValueError(ex)   
         
         
 
@@ -111,14 +115,14 @@ class AlertsAggregator:
             else:
                 raise ValueError("You selected a Settlement that does not exist.")
         
-        except requests.exceptions.RequestException as req_err:
-            raise requests.exceptions.RequestException(f"Error occurred: {req_err}")
+        except requests.exceptions.RequestException as ex:
+            raise requests.exceptions.RequestException(ex)
         
-        except WrongSettlementException as settl_exc:
-            raise WrongSettlementException(settl_exc)
+        except WrongSettlementException as ex:
+            raise WrongSettlementException(ex)
 
-        except ValueError as val_err:
-            raise ValueError(val_err)
+        except ValueError as ex:
+            raise ValueError(ex)
 
         
     # This function receives df and count the total amount of alerts in the requested date range
@@ -166,14 +170,14 @@ class AlertsAggregator:
             else:
                 raise ValueError("You selected a Settlement that does not exist.")
         
-        except requests.exceptions.RequestException as req_err:
-            raise requests.exceptions.RequestException(f"Error occurred: {req_err}")
+        except requests.exceptions.RequestException as ex:
+            raise requests.exceptions.RequestException(f"Error occurred: {ex}")
         
-        except WrongSettlementException as settl_exc:
-            raise WrongSettlementException(settl_exc)
+        except WrongSettlementException as ex:
+            raise WrongSettlementException(ex)
 
-        except ValueError as val_err:
-            raise ValueError(val_err)
+        except ValueError as ex:
+            raise ValueError(ex)
 
     # This function use create_quarter_hour_column func to return the best quarter of an hour to shower in
     def best_time_to_shower(self, settlement : str, start_time : time, end_time : time):
@@ -183,13 +187,13 @@ class AlertsAggregator:
             if isinstance(adjusted_time_counts, pd.Series):
                 # Detect the quarter of an hour that appeared the less
                 best_time = adjusted_time_counts.idxmin()
-                return {"mesage" : f"The best time to take a shower is at the quarter: {best_time}"}
+                return {"mesage" : f"The best time to take a shower is at: {best_time}"}
             else:
                 return adjusted_time_counts
-        except ValueError as e:
-            raise ValueError(e)
-        except requests.exceptions.RequestException as req_err:
-            raise requests.exceptions.RequestException(f"Error occurred: {req_err}")
+        except ValueError as ex:
+            raise ValueError(ex)
+        except requests.exceptions.RequestException as ex:
+            raise requests.exceptions.RequestException(f"Error occurred: {ex}")
    
     
     # This function use create_quarter_hour_column func to return the worst quarter of an hour to shower in
@@ -200,13 +204,13 @@ class AlertsAggregator:
             if isinstance(adjusted_time_counts, pd.Series):
                 # Detect the quarter of an hour that appeared the less
                 worst_time = adjusted_time_counts.idxmax()
-                return {"mesage" : f"The worst time to take a shower is at the quarter: {worst_time}"}
+                return {"mesage" : f"The worst time to take a shower is at: {worst_time}"}
             else:
                 return adjusted_time_counts
-        except ValueError as e:
-            raise ValueError(e)
-        except requests.exceptions.RequestException as req_err:
-            raise requests.exceptions.RequestException(f"Error occurred: {req_err}")
+        except ValueError as ex:
+            raise ValueError(ex)
+        except requests.exceptions.RequestException as ex:
+            raise requests.exceptions.RequestException(f"Error occurred: {ex}")
       
 
     # This function return the area that suffer the most from alerts

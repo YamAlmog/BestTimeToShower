@@ -7,11 +7,14 @@ import json
 from datetime import datetime, timedelta
 import time 
 from Errors import RetrieveDataException
-URL = "https://www.oref.org.il//Shared/Ajax/GetAlarmsHistory.aspx"
-
+import os
+from dotenv import load_dotenv, dotenv_values
+load_dotenv()
+URL = os.getenv('ALERTS_URL')
+ALERTS_DATA_FILE = os.getenv('ALERTS_DATA_FILE')
 DAYS_INTERVAL = 2
-CSV_FILE_PATH = "C:/Projects/Python/Projects/BestTimeToShower/data/data.csv"
 SLEEP_TIME = 5
+
 
 class OrefAlertsRetrieveData:
     def get_request(current_date, dest_date, alerts_list):
@@ -50,7 +53,7 @@ class OrefAlertsRetrieveData:
             df = pd.DataFrame(all_time_alarams_list)
             # Convert the data column to lowercase to make it easy to work with the dataframe in future
             df['data'] = df['data'].str.lower()
-            df.to_csv(CSV_FILE_PATH)
+            df.to_csv(ALERTS_DATA_FILE)
         except RetrieveDataException as ex:
             raise ex
         except PermissionError as e:
