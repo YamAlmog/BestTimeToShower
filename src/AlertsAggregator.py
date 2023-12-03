@@ -19,25 +19,25 @@ class AlertsAggregator:
         self.df = df
 
     # This func get dataframe and return a set of all the settlement in df
-    def return_data_list(self):
-        items_lst = self.df['data'].tolist()
-        items_lst_no_duplications = set(items_lst)
-        return items_lst_no_duplications
+    def all_settlements_in_oref_alerts_df(self):
+        items_list = self.df['data'].tolist()
+        items_list_no_duplications = set(items_list)
+        return items_list_no_duplications
 
 
     # This function get dataframe and settlement_name and return a list of all the settlement in the df that settlement_name is insid them
-    def create_user_settl_lst(self, settlement: str):
-        given_lst = self.return_data_list()
-        settl_lst = []
-        for item in given_lst:
+    def create_user_settlement_list(self, settlement: str):
+        given_list = self.all_settlements_in_oref_alerts_df()
+        settl_list = []
+        for item in given_list:
             if settlement.lower() == item or f"{settlement.lower()}, " in item:
                 return [item]
             elif f"{settlement.lower()} " in item  or f" {settlement.lower()}" in item or settlement.lower() in item :
-                if item not in settl_lst:
-                    settl_lst.append(item)
-        if settl_lst != []:
-            raise WrongSettlementException(f"Incorrect settlement, please try again input one of this options: {settl_lst}")
-        return settl_lst
+                if item not in settl_list:
+                    settl_list.append(item)
+        if settl_list != []:
+            raise WrongSettlementException(f"Incorrect settlement, please try again input one of this options: {settl_list}")
+        return settl_list
 
     
     # This function use geonames api and return True if the user settlement input is actually exist else returns False
@@ -59,29 +59,29 @@ class AlertsAggregator:
                 print(response.text)
                 return True
         else:
-            raise requests.exceptions.RequestException("An error occure while try to use get request from GeoNames api")
+            raise requests.exceptions.RequestException("An error occured while try to use get request from GeoNames api")
 
 
     # This function display the distribution of alarms in a specific settlement
     def display_dist(self, settlement: str):
         try:
-            settlement_lst= self.create_user_settl_lst(settlement)
+            settlement_list= self.create_user_settlement_list(settlement)
             is_settlement_exist = self.does_the_settlement_exist(settlement)
-            if settlement_lst != []:
-                # Filtered the df by the given settlement lst
-                filtered_df = self.df[self.df['data'].isin(settlement_lst)]
+            if settlement_list != []:
+                # Filtered the df by the given settlement list
+                filtered_df = self.df[self.df['data'].isin(settlement_list)]
                 
                 # Access the 'time' column of the DataFrame
                 filtered_df['time'] = pd.to_datetime(filtered_df['time'])
                 filtered_df['hours'] = filtered_df['time'].dt.strftime("%H")
-                hour_lst = ["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23"]
-                alert_distribution = filtered_df['hours'].value_counts().reindex(hour_lst, fill_value=0)
+                hour_list = ["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23"]
+                alert_distribution = filtered_df['hours'].value_counts().reindex(hour_list, fill_value=0)
                 alert_distribution = alert_distribution.to_dict()
-                distribution_lst = []
-                for i in hour_lst:
+                distribution_list = []
+                for i in hour_list:
                     alert_count_obj = AlertCountPerDay(hour=i, count=alert_distribution[i])
-                    distribution_lst.append(alert_count_obj)
-                return distribution_lst
+                    distribution_list.append(alert_count_obj)
+                return distribution_list
             elif is_settlement_exist:
                 return {"message" : f"There were no alarms in the settlement: {settlement}"}   
             else:
@@ -101,13 +101,13 @@ class AlertsAggregator:
     # This function receives df and settlement name then count the total amount of alerts in this settlement
     def alerts_count(self, settlement: str):
         try:
-            user_settlement_lst= self.create_user_settl_lst(settlement)
+            user_settlement_list= self.create_user_settlement_list(settlement)
 
             is_settlement_exist = self.does_the_settlement_exist(settlement)
             print(is_settlement_exist)
-            if user_settlement_lst != []:
-                # Filtered the df by the given settlement lst
-                filtered_df = self.df[self.df['data'].isin(user_settlement_lst)]
+            if user_settlement_list != []:
+                # Filtered the df by the given settlement list
+                filtered_df = self.df[self.df['data'].isin(user_settlement_list)]
                 alert_amount = filtered_df.shape[0]
                 return {"message" : f"The total amount of alerts in {settlement} is: {alert_amount}"}
             elif is_settlement_exist:
@@ -130,7 +130,7 @@ class AlertsAggregator:
         total_alerts = self.df.shape[0]
         return {"message" : f"The total amount of alerts in our country is: {total_alerts}"}
     
-    def create_15_minute_interval_time_lst(self, start_time : time, end_time :time):
+    def create_15_minute_interval_time_list(self, start_time : time, end_time :time):
         time_list = []
         current_time = time(start_time.hour, 0)
         print(current_time)
@@ -143,14 +143,14 @@ class AlertsAggregator:
     # This function receives city, and range of time and returns a df distribution of the alarms in quarters of an hour 0(0-15) 1(15-30) 2(30-45) 3(45-0)
     def create_adjusted_time_column(self, settlement :str, start_time : time, end_time :time):
         try:    
-            settlement_lst= self.create_user_settl_lst(settlement)
+            settlement_list= self.create_user_settlement_list(settlement)
             is_settlement_exist = self.does_the_settlement_exist(settlement)
             # Extract the hour
             start_hour = start_time.hour
             end_hour = end_time.hour
 
-            if settlement_lst != []:
-                filtered_df = self.df[self.df['data'].isin(settlement_lst)]
+            if settlement_list != []:
+                filtered_df = self.df[self.df['data'].isin(settlement_list)]
                 filtered_df['time'] = pd.to_datetime(filtered_df['time']) 
                 # Filter the deteframe by the start and end time of the user
                 filtered_df = filtered_df[(filtered_df['time'].dt.hour >= start_hour) & (filtered_df['time'].dt.hour < end_hour)]
@@ -160,7 +160,7 @@ class AlertsAggregator:
                 filtered_df['adjusted_time'] = pd.to_datetime(filtered_df['adjusted_time']).dt.round('15min').dt.strftime('%H:%M')
                 print(filtered_df)
                 
-                time_list = self.create_15_minute_interval_time_lst(start_time, end_time)
+                time_list = self.create_15_minute_interval_time_list(start_time, end_time)
                 print(time_list)
                 adjusted_time_counts = filtered_df['adjusted_time'].value_counts().reindex(time_list, fill_value=0)
                 print(adjusted_time_counts)

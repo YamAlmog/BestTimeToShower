@@ -16,11 +16,11 @@ def display_disribution(settlement:str, host:str, port:str):
         if "message" in response.json():
             sentence = response.json().get('message', '')
             print(sentence)
-        response_lst = response.json()
-        hour_df = [d['hour'] for d in response_lst]
-        count_df = [d['count'] for d in response_lst]
+        response_list = response.json()
+        hour_vector = [d['hour'] for d in response_list]
+        count_vector = [d['count'] for d in response_list]
         # Create a bar chart
-        plt.bar(hour_df, count_df, color='#E84D88')
+        plt.bar(hour_vector, count_vector, color='#E84D88')
         plt.xlabel('Hour')
         plt.ylabel('Alerts Amount')
         plt.title(f'Alerts Hourly Distribution in {settlement}')
@@ -52,14 +52,14 @@ def main():
         settlement = input("Please input a settlement here --> ")
         display_disribution(settlement, HOST, PORT)
     
-    except ValueError as val_ex:
-        print(val_ex)
-    except WrongSettlementException as settl_ex:
-        print(settl_ex)
-    except requests.exceptions.RequestException as req_ex:
-        print(req_ex)
+    except ValueError as ex:
+        print(ex)
+    except WrongSettlementException as ex:
+        print(ex)
+    except requests.exceptions.RequestException as ex:
+        print(ex)
     except Exception as ex:
-        print(ex) 
+        print(f"Error getting data from host f{ex}") 
 
 if __name__ == "__main__":
     main()
