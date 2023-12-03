@@ -3,7 +3,7 @@ from OrefAlertsRetrieve import OrefAlertsRetrieveData
 from fastapi import FastAPI, HTTPException 
 import pandas as pd
 import requests
-from Errors import RetrieveDataException, WrongSettlementException
+from Errors import RetrieveDataException, WrongSettlementException, NoAlarmsException
 from models import AlertsQueryInput
 from datetime import datetime, timedelta
 app = FastAPI()
@@ -28,7 +28,7 @@ async def get_oref_alert(from_date: str, to_date: str):
     except PermissionError as ex:
         raise HTTPException(status_code=401, detail=str(ex))
     except Exception as ex:
-        raise HTTPException(status_code=500, detail=f"Unkown Error: {ex}")
+        raise HTTPException(status_code=500, detail=f"Unknown Error: {ex}")
 
 
 @app.post("/best_time_to_shower")
@@ -36,12 +36,14 @@ async def find_best_time_to_shower(alerts_query: AlertsQueryInput):
     try:
         best_time = alert_aggregator.best_time_to_shower(alerts_query.settlement, alerts_query.start_time, alerts_query.end_time)
         return best_time
+    except NoAlarmsException as ex:
+        return {"message" : str(ex)}
     except ValueError as ex:
         raise HTTPException(status_code=400, detail=str(ex))
     except WrongSettlementException as ex:
         raise HTTPException(status_code=401, detail=str(ex)) 
     except Exception as ex:
-        raise HTTPException(status_code=500, detail=f"Unkown Error: {ex}")
+        raise HTTPException(status_code=500, detail=f"Unknown Error: {ex}")
     
 
 @app.post("/worst_time_to_shower")
@@ -49,12 +51,14 @@ async def find_worst_time_to_shower(alerts_query: AlertsQueryInput):
     try:
         worst_time = alert_aggregator.worst_time_to_shower(alerts_query.settlement, alerts_query.start_time, alerts_query.end_time)
         return worst_time
+    except NoAlarmsException as ex:
+        return {"message" : str(ex)}
     except ValueError as ex:
         raise HTTPException(status_code=400, detail=str(ex))
     except WrongSettlementException as ex:
         raise HTTPException(status_code=401, detail=str(ex)) 
     except Exception as ex:
-        raise HTTPException(status_code=500, detail=f"Unkown Error: {ex}")
+        raise HTTPException(status_code=500, detail=f"Unknown Error: {ex}")
     
 
 @app.get("/alerts_count")
@@ -62,6 +66,8 @@ async def get_alerts_count(settlement: str):
     try:
         alert_count = alert_aggregator.alerts_count(settlement)
         return alert_count 
+    except NoAlarmsException as ex:
+        return {"message" : str(ex)}
     except ValueError as ex:
         raise HTTPException(status_code=400, detail=str(ex))
     except requests.exceptions.RequestException as ex:
@@ -69,7 +75,7 @@ async def get_alerts_count(settlement: str):
     except WrongSettlementException as ex:
         raise HTTPException(status_code=401, detail=str(ex)) 
     except Exception as ex:
-        raise HTTPException(status_code=500, detail=f"Unkown Error: {ex}")
+        raise HTTPException(status_code=500, detail=f"Unknown Error: {ex}")
     
 @app.get("/total_alerts_count")
 async def get_total_alerts_count():
@@ -84,7 +90,9 @@ async def get_poorest_area():
 @app.get("/get_distribution")
 async def get_distribution(settlement: str):
     try:
-        return alert_aggregator.display_dist(settlement)
+        return alert_aggregator.get_alerts_distribution(settlement)
+    except NoAlarmsException as ex:
+        return {"message" : str(ex)}
     except ValueError as ex:
         raise HTTPException(status_code=400, detail=str(ex))
     except requests.exceptions.RequestException as ex:
@@ -92,7 +100,7 @@ async def get_distribution(settlement: str):
     except WrongSettlementException as ex:
         raise HTTPException(status_code=401, detail=str(ex)) 
     except Exception as ex:
-        raise HTTPException(status_code=500, detail=f"Unkown Error: {ex}")
+        raise HTTPException(status_code=500, detail=f"Unknown Error: {ex}")
     
 
 @app.get("/get_all_settlement")
