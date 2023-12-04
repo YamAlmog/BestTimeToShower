@@ -6,7 +6,7 @@ import requests
 import json
 from datetime import datetime, timedelta
 import time 
-from Errors import RetrieveDataException
+from errors import RetrieveDataException
 import os
 from dotenv import load_dotenv, dotenv_values
 load_dotenv()
@@ -16,7 +16,8 @@ DAYS_INTERVAL = 2
 SLEEP_TIME = 5
 
 
-class OrefAlertsRetrieveData:
+class OrefAlertsIndexer:
+    # retrieve the alerts data documentation from oref alerts api for which the alert category is missiles
     def get_request(current_date, dest_date, alerts_list):
         params = {'lang':'en',
                     'fromDate': current_date,
@@ -57,4 +58,4 @@ class OrefAlertsRetrieveData:
         except RetrieveDataException as ex:
             raise ex
         except PermissionError as e:
-            raise (f"An error occurwith csv file:{e}")
+            raise (f"An error occurred with csv file:{e}")

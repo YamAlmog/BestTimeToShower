@@ -1,16 +1,16 @@
-from AlertsAggregator import AlertsAggregator
-from OrefAlertsRetrieve import OrefAlertsRetrieveData  
+from alerts_aggregator import AlertsAggregator
+from oref_alert_class import OrefAlertsIndexer  
 from fastapi import FastAPI, HTTPException 
 import pandas as pd
 import requests
-from Errors import RetrieveDataException, WrongSettlementException, NoAlarmsException, InvalidSettlement
+from errors import RetrieveDataException, WrongSettlementException, NoAlarmsException, InvalidSettlement
 from models import AlertsQueryInput
 from datetime import datetime, timedelta
 app = FastAPI()
 
 CSV_FILE_PATH = "C:/Projects/Python/Projects/BestTimeToShower/data/data.csv"
 dataframe = pd.read_csv(CSV_FILE_PATH)
-getdata = OrefAlertsRetrieveData()
+getdata = OrefAlertsIndexer()
 alert_aggregator = AlertsAggregator(dataframe)
 
 
@@ -35,7 +35,7 @@ async def get_oref_alert(from_date: str, to_date: str):
 async def find_best_time_to_shower(alerts_query: AlertsQueryInput):
     try:
         best_time = alert_aggregator.best_time_to_shower(alerts_query.settlement, alerts_query.start_time, alerts_query.end_time)
-        return best_time
+        return {"message" : best_time}
     except NoAlarmsException as ex:
         return {"message" : str(ex)}
     except InvalidSettlement as ex:
@@ -50,7 +50,7 @@ async def find_best_time_to_shower(alerts_query: AlertsQueryInput):
 async def find_worst_time_to_shower(alerts_query: AlertsQueryInput):
     try:
         worst_time = alert_aggregator.worst_time_to_shower(alerts_query.settlement, alerts_query.start_time, alerts_query.end_time)
-        return worst_time
+        return {"message" : worst_time}
     except NoAlarmsException as ex:
         return {"message" : str(ex)}
     except InvalidSettlement as ex:
@@ -64,8 +64,8 @@ async def find_worst_time_to_shower(alerts_query: AlertsQueryInput):
 @app.get("/alerts_count")
 async def get_alerts_count(settlement: str):
     try:
-        alert_count = alert_aggregator.alerts_count(settlement)
-        return alert_count 
+        response = alert_aggregator.alerts_count(settlement)
+        return {"message" : response} 
     except NoAlarmsException as ex:
         return {"message" : str(ex)}
     except InvalidSettlement as ex:
@@ -79,13 +79,14 @@ async def get_alerts_count(settlement: str):
     
 @app.get("/total_alerts_count")
 async def get_total_alerts_count():
-    return alert_aggregator.total_alerts_count()
+    response = alert_aggregator.total_alerts_count()
+    return {"message" : response}
 
 
 @app.get("/poorest_city")
 async def get_poorest_area():
-    return alert_aggregator.poorest_area()
-
+    response = alert_aggregator.poorest_area()
+    return {"message": response}
 
 @app.get("/get_distribution")
 async def get_distribution(settlement: str):
@@ -106,5 +107,5 @@ async def get_distribution(settlement: str):
 @app.get("/get_all_settlement")
 async def get_all_settlement():        
         response = alert_aggregator.retrieve_all_settlement()
-        return response
+        return {"message": response}
 

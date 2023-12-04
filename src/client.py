@@ -1,7 +1,7 @@
 import requests
 import matplotlib.pyplot as plt
 import sys
-from Errors import WrongSettlementException, InvalidSettlement
+from errors import WrongSettlementException, InvalidSettlement
 
 
 
