@@ -3,7 +3,7 @@ from OrefAlertsRetrieve import OrefAlertsRetrieveData
 from fastapi import FastAPI, HTTPException 
 import pandas as pd
 import requests
-from Errors import RetrieveDataException, WrongSettlementException, NoAlarmsException
+from Errors import RetrieveDataException, WrongSettlementException, NoAlarmsException, InvalidSettlement
 from models import AlertsQueryInput
 from datetime import datetime, timedelta
 app = FastAPI()
@@ -38,7 +38,7 @@ async def find_best_time_to_shower(alerts_query: AlertsQueryInput):
         return best_time
     except NoAlarmsException as ex:
         return {"message" : str(ex)}
-    except ValueError as ex:
+    except InvalidSettlement as ex:
         raise HTTPException(status_code=400, detail=str(ex))
     except WrongSettlementException as ex:
         raise HTTPException(status_code=401, detail=str(ex)) 
@@ -53,7 +53,7 @@ async def find_worst_time_to_shower(alerts_query: AlertsQueryInput):
         return worst_time
     except NoAlarmsException as ex:
         return {"message" : str(ex)}
-    except ValueError as ex:
+    except InvalidSettlement as ex:
         raise HTTPException(status_code=400, detail=str(ex))
     except WrongSettlementException as ex:
         raise HTTPException(status_code=401, detail=str(ex)) 
@@ -68,7 +68,7 @@ async def get_alerts_count(settlement: str):
         return alert_count 
     except NoAlarmsException as ex:
         return {"message" : str(ex)}
-    except ValueError as ex:
+    except InvalidSettlement as ex:
         raise HTTPException(status_code=400, detail=str(ex))
     except requests.exceptions.RequestException as ex:
         raise HTTPException(status_code=402, detail=str(ex))
@@ -93,7 +93,7 @@ async def get_distribution(settlement: str):
         return alert_aggregator.get_alerts_distribution(settlement)
     except NoAlarmsException as ex:
         return {"message" : str(ex)}
-    except ValueError as ex:
+    except InvalidSettlement as ex:
         raise HTTPException(status_code=400, detail=str(ex))
     except requests.exceptions.RequestException as ex:
         raise HTTPException(status_code=402, detail=str(ex))

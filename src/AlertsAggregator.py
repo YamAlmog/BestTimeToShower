@@ -4,7 +4,7 @@ import warnings
 warnings.filterwarnings('ignore')
 from datetime import datetime
 from models import AlertCountPerDay
-from Errors import WrongSettlementException, NoAlarmsException
+from Errors import WrongSettlementException, NoAlarmsException, InvalidSettlement
 from datetime import time, datetime, timedelta
 import requests
 import os
@@ -25,7 +25,7 @@ class AlertsAggregator:
         return items_list_no_duplications
 
 
-    # This function get dataframe and settlement_name and return a list of all the settlement in the df that settlement_name is inside them
+    # This function get dataframe and settlement_name and return a list of settlement which the settlement name is found
     def create_user_settlement_list(self, settlement: str) -> list:
         given_list = self.all_settlements_in_oref_alerts_df()
         settlement_list = []
@@ -46,6 +46,7 @@ class AlertsAggregator:
                   "name":settlement,
                   "country": "IL",
                   "maxRows":1, 
+                  # i try os.getenv('USERNAME_GEONAMES') but no success
                   "username":"roit1",
                   "fcode":"PPL" 
                 }
@@ -85,16 +86,16 @@ class AlertsAggregator:
             elif is_settlement_exist:
                 raise NoAlarmsException(f"There were no alarms in the settlement: {settlement}")   
             else:
-                raise ValueError("You selected a Settlement that does not exist.")
+                raise InvalidSettlement("You selected a Settlement that does not exist.")
         
         except NoAlarmsException as ex:
             raise NoAlarmsException(ex)   
 
-        except ValueError as ex:
-            raise ValueError(ex)   
+        except InvalidSettlement as ex:
+            raise InvalidSettlement(ex)   
 
         except requests.exceptions.RequestException as ex:
-            raise requests.exceptions.RequestException(f"Error occurred: {ex}")
+            raise requests.exceptions.RequestException(ex)
         
         except WrongSettlementException as ex:
             raise WrongSettlementException(ex)
@@ -118,12 +119,12 @@ class AlertsAggregator:
             elif is_settlement_exist:
                 raise NoAlarmsException(f"There were no alarms in the settlement: {settlement}")
             else:
-                raise ValueError("You selected a Settlement that does not exist.")
+                raise InvalidSettlement("You selected a Settlement that does not exist.")
         
         except NoAlarmsException as ex:
             raise NoAlarmsException(ex)   
-        except ValueError as ex:
-            raise ValueError(ex)       
+        except InvalidSettlement as ex:
+            raise InvalidSettlement(ex)       
         except WrongSettlementException as ex:
             raise WrongSettlementException(ex)
         except requests.exceptions.RequestException as ex:
@@ -173,12 +174,12 @@ class AlertsAggregator:
             elif is_settlement_exist:
                 raise NoAlarmsException(f"There were no alarms in the settlement: {settlement}")   
             else:
-                raise ValueError("You selected a Settlement that does not exist.")
+                raise InvalidSettlement("You selected a Settlement that does not exist.")
         
         except NoAlarmsException as ex:
             raise NoAlarmsException(ex)   
-        except ValueError as ex:
-            raise ValueError(ex)
+        except InvalidSettlement as ex:
+            raise InvalidSettlement(ex)
         except WrongSettlementException as ex:
             raise WrongSettlementException(ex)
         except requests.exceptions.RequestException as ex:
@@ -198,10 +199,10 @@ class AlertsAggregator:
             
         except NoAlarmsException as ex:
             raise NoAlarmsException(ex) 
-        except ValueError as ex:
-            raise ValueError(ex)
+        except InvalidSettlement as ex:
+            raise InvalidSettlement(ex)
         except requests.exceptions.RequestException as ex:
-            raise requests.exceptions.RequestException(f"Error occurred: {ex}")
+            raise requests.exceptions.RequestException(ex)
    
     
     # This function use create_quarter_hour_column func to return the worst quarter of an hour to shower in
@@ -216,10 +217,10 @@ class AlertsAggregator:
             
         except NoAlarmsException as ex:
             raise NoAlarmsException(ex) 
-        except ValueError as ex:
-            raise ValueError(ex)
+        except InvalidSettlement as ex:
+            raise InvalidSettlement(ex)
         except requests.exceptions.RequestException as ex:
-            raise requests.exceptions.RequestException(f"Error occurred: {ex}")
+            raise requests.exceptions.RequestException(ex)
       
 
     # This function return the area that suffer the most from alerts
