@@ -1,4 +1,4 @@
-class RetrieveDataException(Exception):
+class OrefAPIException(Exception):
     def __init__(self, message):
         super().__init__(message)
 

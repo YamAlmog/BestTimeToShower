@@ -1,16 +1,16 @@
 from alerts_aggregator import AlertsAggregator
-from oref_alert_class import OrefAlertsIndexer  
+from oref_alert_indexer import OrefAlertsIndexer  
 from fastapi import FastAPI, HTTPException 
 import pandas as pd
 import requests
-from errors import RetrieveDataException, WrongSettlementException, NoAlarmsException, InvalidSettlement
+from errors import OrefAPIException, WrongSettlementException, NoAlarmsException, InvalidSettlement
 from models import AlertsQueryInput
 from datetime import datetime, timedelta
 app = FastAPI()
 
 CSV_FILE_PATH = "C:/Projects/Python/Projects/BestTimeToShower/data/data.csv"
 dataframe = pd.read_csv(CSV_FILE_PATH)
-getdata = OrefAlertsIndexer()
+alert_indexer = OrefAlertsIndexer()
 alert_aggregator = AlertsAggregator(dataframe)
 
 
@@ -19,11 +19,11 @@ alert_aggregator = AlertsAggregator(dataframe)
 async def get_oref_alert(from_date: str, to_date: str):
     try:
         global alert_aggregator
-        getdata.get_oref_alarms(from_date, to_date)
+        alert_indexer.arrange_alarms_within_csv(from_date, to_date)
         df = pd.read_csv(CSV_FILE_PATH)
         alert_aggregator = AlertsAggregator(df)
         return {"message": "Up-date the alerts data csv"}
-    except RetrieveDataException as ex:
+    except OrefAPIException as ex:
         raise HTTPException(status_code=404, detail=str(ex))
     except PermissionError as ex:
         raise HTTPException(status_code=401, detail=str(ex))

@@ -11,8 +11,9 @@ import os
 from dotenv import load_dotenv, dotenv_values
 load_dotenv()
 GEONAMES_URL = os.getenv('GEONAMES_URL')
+import logging
 
-
+logging.basicConfig(filename='app.log', filemode='w',  level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class AlertsAggregator:
     def __init__(self, df):
@@ -41,7 +42,7 @@ class AlertsAggregator:
 
     
     # This function use geonames api and return True if the user settlement input is actually exist else returns False
-    def does_the_settlement_exist(self, settlement: str) -> bool:
+    def is_real_settlement(self, settlement: str) -> bool:
         params = {
                   "name":settlement,
                   "country": "IL",
@@ -50,14 +51,16 @@ class AlertsAggregator:
                   "username":"roit1",
                   "fcode":"PPL" 
                 }
-        print(params)
+        
+        logging.debug(f'This are the parameters for the get request to GEONAME: {params}')
+        
         response = requests.get(GEONAMES_URL, params=params)
         if response.status_code == 200:    
             if response.json()['totalResultsCount'] == 0:
-                print(response.text)
+                logging.debug(f'This is the response from GEONAME get request: {response.text}')
                 return False
             else:
-                print(response.text)
+                logging.debug(f'This is the response from GEONAME get request: {response.text}')
                 return True
         else:
             raise requests.exceptions.RequestException("An error occurred while try to use get request from GeoNames api")
@@ -67,7 +70,7 @@ class AlertsAggregator:
     def get_alerts_distribution(self, settlement: str) -> list:
         try:
             settlement_list= self.create_user_settlement_list(settlement)
-            is_settlement_exist = self.does_the_settlement_exist(settlement)
+            is_settlement_exist = self.is_real_settlement(settlement)
             if settlement_list != []:
                 # Filtered the df by the given settlement list
                 filtered_df = self.df[self.df['data'].isin(settlement_list)]
@@ -75,12 +78,13 @@ class AlertsAggregator:
                 # Access the 'time' column of the dataframe
                 filtered_df['time'] = pd.to_datetime(filtered_df['time'])
                 filtered_df['hours'] = filtered_df['time'].dt.strftime("%H")
-                hour_list = ["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23"]
+                # use list comprehension to create list of two characters wide str hours like this ["00", "01",... ,"23"]
+                hour_list = [f'{i:02}' for i in range(24)]
                 alert_distribution = filtered_df['hours'].value_counts().reindex(hour_list, fill_value=0)
                 alert_distribution = alert_distribution.to_dict()
                 distribution_list = []
                 for i in hour_list:
-                    alert_count_obj = AlertCountPerDay(hour=i, count=alert_distribution[i])
+                    alert_count_obj = AlertCountPerDay(hour=f"{i}:00", count=alert_distribution[i])
                     distribution_list.append(alert_count_obj)
                 return distribution_list
             elif is_settlement_exist:
@@ -108,9 +112,8 @@ class AlertsAggregator:
     def alerts_count(self, settlement: str) -> str:
         try:
             user_settlement_list= self.create_user_settlement_list(settlement)
-
-            is_settlement_exist = self.does_the_settlement_exist(settlement)
-            print(is_settlement_exist)
+            is_settlement_exist = self.is_real_settlement(settlement)
+            
             if user_settlement_list != []:
                 # Filtered the df by the given settlement list
                 filtered_df = self.df[self.df['data'].isin(user_settlement_list)]
@@ -140,9 +143,10 @@ class AlertsAggregator:
     def quarter_hour_intervals_list(self, start_time : time, end_time :time) -> list:
         time_list = []
         current_time = time(start_time.hour, 0)
-        print(current_time)
+       
         while current_time <= end_time:
             time_list.append(current_time.strftime('%H:%M'))
+            # i convert the current time to datetime object for adding 15 minutes correctly
             current_time = (datetime.combine(datetime.today(), current_time) + timedelta(minutes=15)).time()
 
         return time_list
@@ -151,7 +155,7 @@ class AlertsAggregator:
     def create_adjusted_time_column(self, settlement :str, start_time : time, end_time :time):
         try:    
             settlement_list= self.create_user_settlement_list(settlement)
-            is_settlement_exist = self.does_the_settlement_exist(settlement)
+            is_settlement_exist = self.is_real_settlement(settlement)
             # Extract the hour
             start_hour = start_time.hour
             end_hour = end_time.hour
@@ -165,13 +169,14 @@ class AlertsAggregator:
                 # Create new column which represent the minutes by the nearest 15-minute interval
                 filtered_df['adjusted_time'] = filtered_df['time'].dt.strftime('%H:%M')
                 filtered_df['adjusted_time'] = pd.to_datetime(filtered_df['adjusted_time']).dt.round('15min').dt.strftime('%H:%M')
-                print(filtered_df)
+                logging.debug(f'This is a quick look of how the filtered df seen: {filtered_df}')
+                
                 # Create time list of 15-minute interval and use it to map the amount of alerts for every 15-minute
                 time_list = self.quarter_hour_intervals_list(start_time, end_time)
-                print(time_list)
+                logging.debug(f'This is the 15-minute interval time list: {time_list}')
                 adjusted_time_counts = filtered_df['adjusted_time'].value_counts().reindex(time_list, fill_value=0)
-                print(adjusted_time_counts)
                 return adjusted_time_counts
+            
             elif is_settlement_exist:
                 raise NoAlarmsException(f"There were no alarms in the settlement: {settlement}")   
             else:
@@ -193,7 +198,7 @@ class AlertsAggregator:
         try:    
             # the function create_adjusted_time_column returns pd series of time object and its count value 
             adjusted_time_counts = self.create_adjusted_time_column(settlement, start_time, end_time)
-            print(f"{settlement} \n{adjusted_time_counts}")
+            logging.debug(f'This is the alert distribution by 15-minute interval in {settlement}: \n{adjusted_time_counts}')
             
             # Detect the quarter of an hour that appeared the less-it will be the best time to shower
             best_time = adjusted_time_counts.idxmin()
@@ -212,7 +217,7 @@ class AlertsAggregator:
         try:    
             # the function create_adjusted_time_column returns pd series of time object and its count value 
             adjusted_time_counts = self.create_adjusted_time_column(settlement, start_time, end_time)
-            print(f"{settlement} \n{adjusted_time_counts}")
+            logging.debug(f'This is the alert distribution by 15-minute interval in {settlement}: \n{adjusted_time_counts}')
             
             # Detect the quarter of an hour that appeared the most- it will be the worst time to shower
             worst_time = adjusted_time_counts.idxmax()
