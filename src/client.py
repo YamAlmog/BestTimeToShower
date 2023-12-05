@@ -48,14 +48,14 @@ def main():
         if len(sys.argv) != 3:
             print("Usage: python client.py <hostname> <port>")
             # non-zero status indicates about encountered an issue with the command-line arguments
-            raise InvalidSettlement("There are missing values at the command line, You must pay attention to the Usage")
+            raise ValueError("There are missing values at the command line, You must pay attention to the Usage")
             
         HOST = sys.argv[1]
         PORT = sys.argv[2]
         settlement = input("Please input a settlement here --> ")
         display_alerts_distribution(settlement, HOST, PORT)
     
-    except InvalidSettlement as ex:
+    except ValueError as ex:
         print(ex)
     except WrongSettlementException as ex:
         print(ex)

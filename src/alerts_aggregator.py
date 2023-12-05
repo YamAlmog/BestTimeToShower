@@ -47,8 +47,7 @@ class AlertsAggregator:
                   "name":settlement,
                   "country": "IL",
                   "maxRows":1, 
-                  # i try os.getenv('USERNAME_GEONAMES') but no success
-                  "username":"roit1",
+                  "username" : os.getenv('USERNAME_GEONAMES'),
                   "fcode":"PPL" 
                 }
         

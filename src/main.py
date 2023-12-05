@@ -1,6 +1,6 @@
 from alerts_aggregator import AlertsAggregator
 from oref_alert_indexer import OrefAlertsIndexer  
-from fastapi import FastAPI, HTTPException 
+from fastapi import FastAPI, HTTPException , Depends, Header
 import pandas as pd
 import requests
 from errors import OrefAPIException, WrongSettlementException, NoAlarmsException, InvalidSettlement
@@ -13,16 +13,22 @@ dataframe = pd.read_csv(CSV_FILE_PATH)
 alert_indexer = OrefAlertsIndexer()
 alert_aggregator = AlertsAggregator(dataframe)
 
+def get_api_key(api_key: str = Header(..., convert_underscores=False)):
+
+    if api_key == "red_color":
+        return api_key
+    else:
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
 
 @app.post("/sync_oref_alerts")
-async def get_oref_alert(from_date: str, to_date: str):
+async def get_oref_alert(from_date: str, to_date: str, api_key: str = Depends(get_api_key)):
     try:
         global alert_aggregator
         alert_indexer.arrange_alarms_within_csv(from_date, to_date)
         df = pd.read_csv(CSV_FILE_PATH)
         alert_aggregator = AlertsAggregator(df)
-        return {"message": "Up-date the alerts data csv"}
+        return {"message": f"API key {api_key} is valid, You updated the alerts data csv"}
     except OrefAPIException as ex:
         raise HTTPException(status_code=404, detail=str(ex))
     except PermissionError as ex:
