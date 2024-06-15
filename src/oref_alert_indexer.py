@@ -45,10 +45,10 @@ class OrefAlertsIndexer:
             current_date = datetime.strptime(from_date, '%d.%m.%Y')
             logging.debug(f'This is the current date time: {current_date}')
             target_date = datetime.strptime(to_date, '%d.%m.%Y')
-            logging.debug(f'This is the current date time: {target_date}')
+            logging.debug(f'This is the target date time: {target_date}')
             
             while current_date <= target_date:
-                dest_date = current_date + timedelta(days=DAYS_INTERVAL)  
+                dest_date = current_date + timedelta(days=DAYS_INTERVAL)  # i took the data from oref api 2 days interval because there is allot of it
                 all_time_alarams_list += self.get_alerts_from_oref_api(current_date, dest_date)
                 logging.debug(f"Get the alarms from date: {current_date} to date: {dest_date}")
                 current_date += timedelta(days=DAYS_INTERVAL)

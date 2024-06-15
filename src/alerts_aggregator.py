@@ -2,7 +2,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
-from datetime import datetime
 from models import AlertCountPerDay
 from errors import WrongSettlementException, NoAlarmsException, InvalidSettlement
 from datetime import time, datetime, timedelta
@@ -153,7 +152,7 @@ class AlertsAggregator:
     # This function receives city, and range of time and returns pd series of time and its count value
     def create_adjusted_time_column(self, settlement :str, start_time : time, end_time :time):
         try:    
-            settlement_list= self.create_user_settlement_list(settlement)
+            settlement_list = self.create_user_settlement_list(settlement)
             is_settlement_exist = self.is_real_settlement(settlement)
             # Extract the hour
             start_hour = start_time.hour
