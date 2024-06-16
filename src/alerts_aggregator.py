@@ -107,7 +107,7 @@ class AlertsAggregator:
         
 
     # This function receives df and settlement name then count the total amount of alerts in this settlement
-    def alerts_count(self, settlement: str) -> str:
+    def alerts_count(self, settlement: str) -> int:
         try:
             user_settlement_list= self.create_user_settlement_list(settlement)
             is_settlement_exist = self.is_real_settlement(settlement)
@@ -116,7 +116,7 @@ class AlertsAggregator:
                 # Filtered the df by the given settlement list
                 filtered_df = self.df[self.df['data'].isin(user_settlement_list)]
                 alert_amount = filtered_df.shape[0]
-                return f"The total amount of alerts in {settlement} is: {alert_amount}"
+                return alert_amount
             elif is_settlement_exist:
                 raise NoAlarmsException(f"There were no alarms in the settlement: {settlement}")
             else:
@@ -133,9 +133,9 @@ class AlertsAggregator:
 
         
     # This function receives df and count the total amount of alerts in the requested date range
-    def total_alerts_count(self) -> str:
+    def total_alerts_count(self) -> int:
         total_alerts = self.df.shape[0]
-        return f"The total amount of alerts in our country is: {total_alerts}"
+        return total_alerts
     
     # This function get range of time from user and returns list of time in quarter hour interval between this range 
     def quarter_hour_intervals_list(self, start_time : time, end_time :time) -> list:
@@ -200,7 +200,7 @@ class AlertsAggregator:
             
             # Detect the quarter of an hour that appeared the less-it will be the best time to shower
             best_time = adjusted_time_counts.idxmin()
-            return f"The best time to take a shower is at: {best_time}"
+            return best_time
             
         except NoAlarmsException as ex:
             raise NoAlarmsException(ex) 
@@ -219,7 +219,7 @@ class AlertsAggregator:
             
             # Detect the quarter of an hour that appeared the most- it will be the worst time to shower
             worst_time = adjusted_time_counts.idxmax()
-            return f"The worst time to take a shower is at: {worst_time}"
+            return worst_time
             
         except NoAlarmsException as ex:
             raise NoAlarmsException(ex) 
@@ -233,10 +233,15 @@ class AlertsAggregator:
     def poorest_area(self) -> str:
         city_alerts_count = self.df['data'].value_counts()
         poorest_city = city_alerts_count.idxmax()
-        return f"The area that suffers the most from alarms is: {poorest_city}"
+        return poorest_city
     
     # This function return a list of all the settlements in the data column in the dataframe
-    def retrieve_all_settlement(self) -> str:
+    def retrieve_all_settlement(self) -> list:
         settlement_df = self.df.drop_duplicates(subset='data')
         settlement_list = settlement_df['data'].tolist()
-        return f"The settlements in the df are: {settlement_list}"
+        return settlement_list
+
+
+
+    def reload_data(self, new_df):
+        self.df = new_df

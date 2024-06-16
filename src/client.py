@@ -1,6 +1,6 @@
 import requests
 import matplotlib.pyplot as plt
-import sys
+import argparse
 from errors import WrongSettlementException, InvalidSettlement
 
 
@@ -28,32 +28,27 @@ def display_alerts_distribution(settlement:str, host:str, port:str):
             plt.ylabel('Alerts Amount')
             plt.title(f'Alerts Hourly Distribution in {settlement}')
             plt.show()
-    elif response.status_code == 400:
-        error_details = response.json().get('detail', '')
-        raise InvalidSettlement(error_details)
-    elif response.status_code == 401:
-        error_details = response.json().get('detail', '')
-        raise WrongSettlementException(error_details)
-    elif response.status_code == 402:
-        error_details = response.json().get('detail', '')
-        raise requests.exceptions.RequestException(error_details)
-    elif response.status_code == 500:
-        error_details = response.json().get('detail', '')
-        raise Exception(error_details)
+    else:
+        raise response.raise_for_status()
     
 
 def main():
     try:    
-        
-        if len(sys.argv) != 3:
-            print("Usage: python client.py <hostname> <port>")
-            # non-zero status indicates about encountered an issue with the command-line arguments
-            raise ValueError("There are missing values at the command line, You must pay attention to the Usage")
+        parser = argparse.ArgumentParser(description='Client for displaying alerts distribution.')
+        parser.add_argument('hostname', type=str, help='The hostname of the server')
+        parser.add_argument('port', type=str, help='The port of the server')
+
+        args = parser.parse_args()
+
+        HOST = args.hostname
+        PORT = args.port
+
+        while True:    
+            settlement = input("Please input a settlement here --> ")
+            if settlement == "exit":
+                break
+            display_alerts_distribution(settlement, HOST, PORT)
             
-        HOST = sys.argv[1]
-        PORT = sys.argv[2]
-        settlement = input("Please input a settlement here --> ")
-        display_alerts_distribution(settlement, HOST, PORT)
     
     except ValueError as ex:
         print(ex)
@@ -61,8 +56,10 @@ def main():
         print(ex)
     except requests.exceptions.RequestException as ex:
         print(ex)
+    except requests.exceptions.HTTPError as ex:
+        print(ex) 
     except Exception as ex:
-        print(f"Error getting data from host f{ex}") 
+        print(f"Error getting data from host {ex}") 
 
 if __name__ == "__main__":
     main()

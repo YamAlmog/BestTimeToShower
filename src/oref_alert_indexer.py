@@ -17,7 +17,7 @@ ALERTS_DATA_FILE = os.getenv('ALERTS_DATA_FILE')
 DAYS_INTERVAL = 2
 SLEEP_TIME = 5
 
-
+# Retrieve alerts from oref API by given range of time, and build database
 class OrefAlertsIndexer:
     # retrieve the alerts data documentation from oref alerts api for which the alert category is missiles
     def get_alerts_from_oref_api(self, current_date, dest_date):
@@ -48,7 +48,7 @@ class OrefAlertsIndexer:
             logging.debug(f'This is the target date time: {target_date}')
             
             while current_date <= target_date:
-                dest_date = current_date + timedelta(days=DAYS_INTERVAL)  # i took the data from oref api 2 days interval because there is allot of it
+                dest_date = current_date + timedelta(days=DAYS_INTERVAL)  # i took the data from oref api in 2 days interval because there were a lot of alerts per day
                 all_time_alarams_list += self.get_alerts_from_oref_api(current_date, dest_date)
                 logging.debug(f"Get the alarms from date: {current_date} to date: {dest_date}")
                 current_date += timedelta(days=DAYS_INTERVAL)
@@ -63,6 +63,7 @@ class OrefAlertsIndexer:
             # Convert the data column to lowercase to make it easy to work with the dataframe in future
             df['data'] = df['data'].str.lower()
             df.to_csv(ALERTS_DATA_FILE)
+            return df
         except OrefAPIException as ex:
             raise ex
         except PermissionError as e:
