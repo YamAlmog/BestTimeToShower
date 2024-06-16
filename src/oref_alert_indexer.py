@@ -6,7 +6,7 @@ import requests
 import json
 from datetime import datetime, timedelta
 import time 
-from errors import OrefAPIException
+from errors import OrefAPIException, RateLimitException
 import os
 from dotenv import load_dotenv, dotenv_values
 import logging
@@ -15,11 +15,27 @@ load_dotenv()
 URL = os.getenv('ALERTS_URL')
 ALERTS_DATA_FILE = os.getenv('ALERTS_DATA_FILE')
 DAYS_INTERVAL = 2
-SLEEP_TIME = 5
+SLEEP_TIME = 1
+DELAYTIME = 5
+RETRIESNUM = 3
 
 # Retrieve alerts from oref API by given range of time, and build database
 class OrefAlertsIndexer:
+    # Decorator function for get_wikipedia_page function
+    def retry_on_rate_limit_exception(func):
+        def wrapper(*args):
+            for attempt in range(RETRIESNUM): 
+                try:
+                    result = func(*args)
+                    return result
+                except RateLimitException:
+                    logging.debug('rate limit handling')
+                    time.sleep(DELAYTIME)
+                    continue
+        return wrapper
+
     # retrieve the alerts data documentation from oref alerts api for which the alert category is missiles
+    @retry_on_rate_limit_exception
     def get_alerts_from_oref_api(self, current_date, dest_date):
         params = {'lang':'en',
                     'fromDate': current_date,
@@ -33,7 +49,6 @@ class OrefAlertsIndexer:
             missiles_alerts_list = [item for item in current_alerts_list if item['category_desc']=='Missiles']
             return missiles_alerts_list 
 
-            
         else:
             raise OrefAPIException("HTTP error occurred with get request alerts data")
             

@@ -4,15 +4,17 @@ import warnings
 warnings.filterwarnings('ignore')
 from models import AlertCountPerDay
 from errors import WrongSettlementException, NoAlarmsException, InvalidSettlement
+from geoname_client import GeonameModule
 from datetime import time, datetime, timedelta
 import requests
 import os
 from dotenv import load_dotenv, dotenv_values
 load_dotenv()
-GEONAMES_URL = os.getenv('GEONAMES_URL')
 import logging
 
 logging.basicConfig(filename='app.log', filemode='w',  level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
 
 class AlertsAggregator:
     def __init__(self, df):
@@ -39,36 +41,13 @@ class AlertsAggregator:
             raise WrongSettlementException(f"Incorrect settlement, please try again input one of this options: {settlement_list}")
         return settlement_list
 
-    
-    # This function use geonames api and return True if the user settlement input is actually exist else returns False
-    def is_real_settlement(self, settlement: str) -> bool:
-        params = {
-                  "name":settlement,
-                  "country": "IL",
-                  "maxRows":1, 
-                  "username" : os.getenv('USERNAME_GEONAMES'),
-                  "fcode":"PPL" 
-                }
-        
-        logging.debug(f'This are the parameters for the get request to GEONAME: {params}')
-        
-        response = requests.get(GEONAMES_URL, params=params)
-        if response.status_code == 200:    
-            if response.json()['totalResultsCount'] == 0:
-                logging.debug(f'This is the response from GEONAME get request: {response.text}')
-                return False
-            else:
-                logging.debug(f'This is the response from GEONAME get request: {response.text}')
-                return True
-        else:
-            raise requests.exceptions.RequestException("An error occurred while try to use get request from GeoNames api")
 
 
     # This function display the distribution of alarms in a specific settlement
     def get_alerts_distribution(self, settlement: str) -> list:
         try:
             settlement_list= self.create_user_settlement_list(settlement)
-            is_settlement_exist = self.is_real_settlement(settlement)
+            is_settlement_exist = GeonameModule.is_real_settlement(settlement)
             if settlement_list != []:
                 # Filtered the df by the given settlement list
                 filtered_df = self.df[self.df['data'].isin(settlement_list)]
@@ -110,7 +89,7 @@ class AlertsAggregator:
     def alerts_count(self, settlement: str) -> int:
         try:
             user_settlement_list= self.create_user_settlement_list(settlement)
-            is_settlement_exist = self.is_real_settlement(settlement)
+            is_settlement_exist = GeonameModule.is_real_settlement(settlement)
             
             if user_settlement_list != []:
                 # Filtered the df by the given settlement list
@@ -153,7 +132,7 @@ class AlertsAggregator:
     def create_adjusted_time_column(self, settlement :str, start_time : time, end_time :time):
         try:    
             settlement_list = self.create_user_settlement_list(settlement)
-            is_settlement_exist = self.is_real_settlement(settlement)
+            is_settlement_exist = GeonameModule.is_real_settlement(settlement)
             # Extract the hour
             start_hour = start_time.hour
             end_hour = end_time.hour
