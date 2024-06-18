@@ -21,3 +21,8 @@ class InvalidSettlement(Exception):
 class RateLimitException(Exception):
     def __init__(self, message):
         super().__init__(message)
+
+
+class SqlDatabaseException(Exception):
+    def __init__(self, message):
+        super().__init__(message)
