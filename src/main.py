@@ -14,9 +14,8 @@ OREF_TABLE = "Oref_Alerts"
 ADMIN_API_KEY = os.getenv("ADMIN_API_KEY")
 CSV_FILE_PATH = os.getenv("ALERTS_DATA_FILE")
 # dataframe = pd.read_csv(CSV_FILE_PATH)
-#dataframe = SqlOrefDatabase.retrieve_data_from_oref_table(OREF_TABLE)
 alert_indexer = OrefAlertsIndexer()
-alert_aggregator = AlertsAggregator(dataframe)
+alert_aggregator = None
 
 def get_api_key(api_key: str = Header(..., convert_underscores=False)):
     if api_key == ADMIN_API_KEY:
@@ -25,10 +24,26 @@ def get_api_key(api_key: str = Header(..., convert_underscores=False)):
         raise HTTPException(status_code=401, detail="Invalid API key")
 
 
+# Define the function to be called on app initialization
+def init_app():
+    print("App is starting up...")
+    
+    # read data from SQL server and load to dataframe 
+    dataframe = SqlOrefDatabase.retrieve_data_from_oref_table(OREF_TABLE)
+    # init alerts aggeragot 
+    global alert_aggregator
+    alert_aggregator = AlertsAggregator(dataframe)
+
+# Register the function to be called on startup
+@app.on_event("startup")
+async def startup_event():
+    init_app()
+
 @app.post("/sync_oref_alerts")
 async def get_oref_alert(from_date: str, to_date: str, api_key: str = Depends(get_api_key)):
     try:
         #df = alert_indexer.arrange_alarms_within_csv(from_date, to_date)
+        SqlOrefDatabase.delete_oref_table("OrefTest")
         df = alert_indexer.arrange_alarms_within_sql_database(from_date, to_date, OREF_TABLE)
         alert_aggregator.reload_data(df)
         return {"message": f"You updated the alerts sql database"}
