@@ -38,10 +38,10 @@ class SqlOrefDatabase:
     def preparing_oref_data(self, data_list:list):
         '''data_list look like this: 
                     [
-                    {'data': 'Gavim, Sapir College', 'date': '20.10.2023', 'time': '23:02:00', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23055},
+                    {'data': 'Gavim, Sapir College', 'date': '20.10.2023', 'time': '23:02:00', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Hostile aircraft intrusion', 'matrix_id': 1, 'rid': 23055},
                     {'data': 'Sderot, Ivim, Nir Am', 'date': '20.10.2023', 'time': '23:01:59', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23056},
                     {'data': 'Ashkelon - North', 'date': '20.10.2023', 'time': '22:00:23', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23053},
-                    {'data': 'Zikim', 'date': '20.10.2023', 'time': '22:00:22', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23054},
+                    {'data': 'Zikim', 'date': '20.10.2023', 'time': '22:00:22', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Hostile aircraft intrusion', 'matrix_id': 1, 'rid': 23054},
                     {'data': 'Ashkelon - South', 'date': '20.10.2023', 'time': '22:00:13', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23051},
                     {'data': 'Ashkelon Southern Industrial Zone', 'date': '20.10.2023', 'time': '22:00:12', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23052}
                     ]'''
@@ -66,10 +66,26 @@ class SqlOrefDatabase:
     def retrieve_data_from_oref_table(self, table_name:str):
         try:
             with psycopg2.connect(**self.db_params) as conn:
-                QUERY = f"SELECT * FROM {table_name};"
-                df = pd.read_sql(QUERY, conn)
+                # Check if table exists
+                check_query = f"""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = '{table_name}'
+                );
+                """
+                with conn.cursor() as cur:
+                    cur.execute(check_query)
+                    table_exists = cur.fetchone()[0]
+                
+                if table_exists:
+                    # Table exists, retrieve data
+                    query = f"SELECT * FROM {table_name};"
+                    df = pd.read_sql(query, conn)
+                else:
+                    # Table does not exist, return empty DataFrame
+                    df = pd.DataFrame()
+                
                 return df
-
         except Exception as ex:
             raise SqlDatabaseException(ex)
         
@@ -89,15 +105,17 @@ class SqlOrefDatabase:
 def main():
     oref_db = SqlOrefDatabase()
     # list_of_data = [
-    #             {'data': 'Gavim, Sapir College', 'date': '20.10.2023', 'time': '23:02:00', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23055},
+    #             {'data': 'Gavim, Sapir College', 'date': '20.10.2023', 'time': '23:02:00', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Hostile aircraft intrusion', 'matrix_id': 1, 'rid': 23055},
     #             {'data': 'Sderot, Ivim, Nir Am', 'date': '20.10.2023', 'time': '23:01:59', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23056},
     #             {'data': 'Ashkelon - North', 'date': '20.10.2023', 'time': '22:00:23', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23053},
-    #             {'data': 'Zikim', 'date': '20.10.2023', 'time': '22:00:22', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23054},
+    #             {'data': 'Zikim', 'date': '20.10.2023', 'time': '22:00:22', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Hostile aircraft intrusion', 'matrix_id': 1, 'rid': 23054},
     #             {'data': 'Ashkelon - South', 'date': '20.10.2023', 'time': '22:00:13', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23051},
     #             {'data': 'Ashkelon Southern Industrial Zone', 'date': '20.10.2023', 'time': '22:00:12', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23052}
     #             ]
     # oref_db.create_oref_alert_table("OrefTest")
     # oref_db.insert_alerts_to_oref_table("OrefTest", list_of_data)
-    # oref_db.delete_oref_table("OrefTest")
+    oref_db.delete_oref_table("OrefTest")
+    df = oref_db.retrieve_data_from_oref_table("OrefTest")
+    print(df[df['alert_type'] == 'Hostile aircraft intrusion'])
 if __name__ == "__main__":
     main()

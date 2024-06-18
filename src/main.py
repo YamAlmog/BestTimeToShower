@@ -3,16 +3,18 @@ from oref_alert_indexer import OrefAlertsIndexer
 from fastapi import FastAPI, HTTPException , Depends, Header
 import pandas as pd
 import requests
-from errors import OrefAPIException, WrongSettlementException, NoAlarmsException, InvalidSettlement
+from errors import OrefAPIException, WrongSettlementException, NoAlarmsException, InvalidSettlement, SqlDatabaseException
 from models import AlertsQueryInput
 from datetime import datetime, timedelta
+from sql_database import SqlOrefDatabase
 import os
 
 app = FastAPI()
-
+OREF_TABLE = "Oref_Alerts"
 ADMIN_API_KEY = os.getenv("ADMIN_API_KEY")
 CSV_FILE_PATH = os.getenv("ALERTS_DATA_FILE")
-dataframe = pd.read_csv(CSV_FILE_PATH)
+# dataframe = pd.read_csv(CSV_FILE_PATH)
+#dataframe = SqlOrefDatabase.retrieve_data_from_oref_table(OREF_TABLE)
 alert_indexer = OrefAlertsIndexer()
 alert_aggregator = AlertsAggregator(dataframe)
 
@@ -26,12 +28,13 @@ def get_api_key(api_key: str = Header(..., convert_underscores=False)):
 @app.post("/sync_oref_alerts")
 async def get_oref_alert(from_date: str, to_date: str, api_key: str = Depends(get_api_key)):
     try:
-        df = alert_indexer.arrange_alarms_within_csv(from_date, to_date)
+        #df = alert_indexer.arrange_alarms_within_csv(from_date, to_date)
+        df = alert_indexer.arrange_alarms_within_sql_database(from_date, to_date, OREF_TABLE)
         alert_aggregator.reload_data(df)
-        return {"message": f"You updated the alerts database"}
+        return {"message": f"You updated the alerts sql database"}
     except OrefAPIException as ex:
         raise HTTPException(status_code=404, detail=str(ex))
-    except PermissionError as ex:
+    except SqlDatabaseException as ex:
         raise HTTPException(status_code=401, detail=str(ex))
     except Exception as ex:
         raise HTTPException(status_code=500, detail=f"Unknown Error: {ex}")
