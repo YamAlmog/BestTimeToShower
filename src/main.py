@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException , Depends, Header
 import pandas as pd
 import requests
 from errors import OrefAPIException, WrongSettlementException, NoAlarmsException, InvalidSettlement, SqlDatabaseException
-from models import AlertsQueryInput
+from models import AlertsQueryInput, AlertType
 from datetime import datetime, timedelta
 from sql_database import SqlOrefDatabase
 import os
@@ -15,21 +15,17 @@ ADMIN_API_KEY = os.getenv("ADMIN_API_KEY")
 CSV_FILE_PATH = os.getenv("ALERTS_DATA_FILE")
 # dataframe = pd.read_csv(CSV_FILE_PATH)
 alert_indexer = OrefAlertsIndexer()
-alert_aggregator = None
+sql_instance = SqlOrefDatabase()
+#alert_aggregator = None
 
-def get_api_key(api_key: str = Header(..., convert_underscores=False)):
-    if api_key == ADMIN_API_KEY:
-        return api_key
-    else:
-        raise HTTPException(status_code=401, detail="Invalid API key")
 
 
 # Define the function to be called on app initialization
-def init_app():
+def init_app(table_name:str):
     print("App is starting up...")
     
     # read data from SQL server and load to dataframe 
-    dataframe = SqlOrefDatabase.retrieve_data_from_oref_table(OREF_TABLE)
+    dataframe = sql_instance.retrieve_data_from_oref_table(table_name)
     # init alerts aggeragot 
     global alert_aggregator
     alert_aggregator = AlertsAggregator(dataframe)
@@ -37,13 +33,20 @@ def init_app():
 # Register the function to be called on startup
 @app.on_event("startup")
 async def startup_event():
-    init_app()
+    init_app(OREF_TABLE)
 
+
+def get_api_key(api_key: str = Header(..., convert_underscores=False)):
+    if api_key == ADMIN_API_KEY:
+        return api_key
+    else:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+    
 @app.post("/sync_oref_alerts")
 async def get_oref_alert(from_date: str, to_date: str, api_key: str = Depends(get_api_key)):
     try:
         #df = alert_indexer.arrange_alarms_within_csv(from_date, to_date)
-        SqlOrefDatabase.delete_oref_table("OrefTest")
+        sql_instance.delete_oref_table(OREF_TABLE)
         df = alert_indexer.arrange_alarms_within_sql_database(from_date, to_date, OREF_TABLE)
         alert_aggregator.reload_data(df)
         return {"message": f"You updated the alerts sql database"}
@@ -107,10 +110,11 @@ async def get_total_alerts_count():
     return {"message" : f"The total amount of alerts is: {total_alerts}"}
 
 
-@app.get("/poorest_city")
-async def get_poorest_area():
-    poorest_city = alert_aggregator.poorest_area()
-    return {"message": f"The area that suffers the most from alarms is: {poorest_city}"}
+@app.get("/most_hitted_settlement")
+async def get_most_hitted_settlement(alert_type:AlertType):
+    poorest_city = alert_aggregator.most_hitted_settlement(alert_type)
+    return {"message": f"The area that suffers the most from {alert_type} alarms is: {poorest_city}"}
+
 
 @app.get("/get_distribution")
 async def get_distribution(settlement: str):
@@ -132,4 +136,10 @@ async def get_distribution(settlement: str):
 async def get_all_settlement():        
         settlement_list = alert_aggregator.retrieve_all_settlement()
         return {"message": f"The settlements in the df are: {settlement_list}"}
+
+
+@app.get("/alerts_types")
+async def get_alerts_types():
+    all_types = alert_aggregator.get_all_alerts_types()
+    return {"message" : f"The total amount of alerts is: {all_types}"}
 

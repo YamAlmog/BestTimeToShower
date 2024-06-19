@@ -45,6 +45,8 @@ class SqlOrefDatabase:
                     {'data': 'Ashkelon - South', 'date': '20.10.2023', 'time': '22:00:13', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23051},
                     {'data': 'Ashkelon Southern Industrial Zone', 'date': '20.10.2023', 'time': '22:00:12', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23052}
                     ]'''
+        for item in data_list:
+            item['data'] = item['data'].lower()
         data_tuples = [(d['data'], d['date'], d['time'], d['category_desc']) for d in data_list]
         return data_tuples
 
@@ -52,7 +54,6 @@ class SqlOrefDatabase:
     def insert_alerts_to_oref_table(self, table_name:str, data_list:list):
         try:
             tuples_list = self.preparing_oref_data(data_list)
-            print("--------------------------tuples list-----------------",tuples_list)
             with psycopg2.connect(**self.db_params) as conn:
                 cursor = conn.cursor()
                 QUERY = f"INSERT INTO {table_name} (settlement, date, time, alert_type) VALUES (%s, %s, %s, %s);"

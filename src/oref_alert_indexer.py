@@ -89,8 +89,9 @@ class OrefAlertsIndexer:
 
     def arrange_alarms_within_sql_database(self, from_date: str, to_date: str, table_name:str):
         try:    
+            sql_instance = SqlOrefDatabase()
             # create Oref Alerts table if not exist
-            SqlOrefDatabase.create_oref_alert_table(table_name)
+            sql_instance.create_oref_alert_table(table_name)
 
             current_date = datetime.strptime(from_date, '%d.%m.%Y')
             target_date = datetime.strptime(to_date, '%d.%m.%Y')
@@ -98,7 +99,7 @@ class OrefAlertsIndexer:
             while current_date <= target_date:
                     dest_date = current_date + timedelta(days=DAYS_INTERVAL)  # i took the data from oref api in 2 days interval because there were a lot of alerts per day
                     alarams_list = self.get_alerts_from_oref_api(current_date, dest_date)
-                    SqlOrefDatabase.insert_alerts_to_oref_table(table_name, alarams_list)
+                    sql_instance.insert_alerts_to_oref_table(table_name, alarams_list)
                     current_date += timedelta(days=DAYS_INTERVAL)
             
             # in case that current_date exceeds from target_date cause I add DAYS_INTERVAL at the end of while loop
@@ -107,8 +108,8 @@ class OrefAlertsIndexer:
             day_to_add = DAYS_INTERVAL-days_diff
             current_date -= timedelta(days=DAYS_INTERVAL) # return current_date to the correct date cause I add DAYS_INTERVAL at the end of while loop
             alarams_list = self.get_alerts_from_oref_api(current_date, current_date + timedelta(days=day_to_add))
-            SqlOrefDatabase.insert_alerts_to_oref_table(table_name, alarams_list)
-            df = SqlOrefDatabase.retrieve_data_from_oref_table(table_name)
+            sql_instance.insert_alerts_to_oref_table(table_name, alarams_list)
+            df = sql_instance.retrieve_data_from_oref_table(table_name)
             return df
         except SqlDatabaseException as ex:
             raise SqlDatabaseException(ex)

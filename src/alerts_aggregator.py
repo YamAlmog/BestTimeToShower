@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
-from models import AlertCountPerDay
+from models import AlertCountPerDay, AlertType
 from errors import WrongSettlementException, NoAlarmsException, InvalidSettlement
 from geoname_client import GeonameModule
 from datetime import time, datetime, timedelta
@@ -22,7 +22,7 @@ class AlertsAggregator:
 
     # This function get dataframe and return all the settlement in it
     def all_settlements_in_oref_alerts_df(self) -> list:
-        items_list = self.df['data'].tolist()
+        items_list = self.df['settlement'].tolist()
         items_list_no_duplications = set(items_list)
         return items_list_no_duplications
 
@@ -50,7 +50,7 @@ class AlertsAggregator:
             is_settlement_exist = GeonameModule.is_real_settlement(settlement)
             if settlement_list != []:
                 # Filtered the df by the given settlement list
-                filtered_df = self.df[self.df['data'].isin(settlement_list)]
+                filtered_df = self.df[self.df['settlement'].isin(settlement_list)]
                 
                 # Access the 'time' column of the dataframe
                 filtered_df['time'] = pd.to_datetime(filtered_df['time'])
@@ -83,7 +83,6 @@ class AlertsAggregator:
        
         
         
-        
 
     # This function receives df and settlement name then count the total amount of alerts in this settlement
     def alerts_count(self, settlement: str) -> int:
@@ -93,7 +92,7 @@ class AlertsAggregator:
             
             if user_settlement_list != []:
                 # Filtered the df by the given settlement list
-                filtered_df = self.df[self.df['data'].isin(user_settlement_list)]
+                filtered_df = self.df[self.df['settlement'].isin(user_settlement_list)]
                 alert_amount = filtered_df.shape[0]
                 return alert_amount
             elif is_settlement_exist:
@@ -116,6 +115,7 @@ class AlertsAggregator:
         total_alerts = self.df.shape[0]
         return total_alerts
     
+
     # This function get range of time from user and returns list of time in quarter hour interval between this range 
     def quarter_hour_intervals_list(self, start_time : time, end_time :time) -> list:
         time_list = []
@@ -136,9 +136,11 @@ class AlertsAggregator:
             # Extract the hour
             start_hour = start_time.hour
             end_hour = end_time.hour
-
+            missiles_df = self.df[self.df['alert_type'] == 'Missiles']
+            
             if settlement_list != []:
-                filtered_df = self.df[self.df['data'].isin(settlement_list)]
+                filtered_df = missiles_df[missiles_df['settlement'].isin(settlement_list)]
+            
                 filtered_df['time'] = pd.to_datetime(filtered_df['time']) 
                 # Filter the dataframe by the start and end time of the user
                 filtered_df = filtered_df[(filtered_df['time'].dt.hour >= start_hour) & (filtered_df['time'].dt.hour < end_hour)]
@@ -208,19 +210,25 @@ class AlertsAggregator:
             raise requests.exceptions.RequestException(ex)
       
 
-    # This function return the area that suffer the most from alerts
-    def poorest_area(self) -> str:
-        city_alerts_count = self.df['data'].value_counts()
-        poorest_city = city_alerts_count.idxmax()
-        return poorest_city
-    
     # This function return a list of all the settlements in the data column in the dataframe
     def retrieve_all_settlement(self) -> list:
-        settlement_df = self.df.drop_duplicates(subset='data')
-        settlement_list = settlement_df['data'].tolist()
+        settlement_df = self.df.drop_duplicates(subset='settlement')
+        settlement_list = settlement_df['settlement'].tolist()
         return settlement_list
 
+
+    # This function return the area that suffer the most from alerts use enum for alert type
+    def most_hitted_settlement(self, alert_type:AlertType):
+        hostile_aircraft_df = self.df[self.df['alert_type'] == alert_type.value]
+        city_alerts_count = hostile_aircraft_df['settlement'].value_counts()
+        most_hitted_city = city_alerts_count.idxmax()
+        return most_hitted_city
 
 
     def reload_data(self, new_df):
         self.df = new_df
+
+
+    def  get_all_alerts_types(self):
+        unique_alert_types = self.df['alert_type'].unique()
+        return unique_alert_types
