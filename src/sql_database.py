@@ -99,10 +99,11 @@ def main():
                 {'data': 'Ashkelon - South', 'date': '20.10.2023', 'time': '22:00:13', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23051},
                 {'data': 'Ashkelon Southern Industrial Zone', 'date': '20.10.2023', 'time': '22:00:12', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23052}
                 ]
-    oref_db.create_oref_alert_table("Oref_Alerts")
-    oref_db.insert_alerts_to_oref_table("Oref_Alerts", list_of_data)
-    #oref_db.delete_oref_table("OrefTest")
-    #df = oref_db.retrieve_data_from_oref_table("OrefTest")
-    #print(df[df['alert_type'] == 'Hostile aircraft intrusion'])
+    # oref_db.create_oref_alert_table("Oref_Alerts")
+    # # oref_db.insert_alerts_to_oref_table("Oref_Alerts", list_of_data)
+    # oref_db.delete_oref_table("Oref_Alerts")
+    
+    # df = oref_db.retrieve_data_from_oref_table("OrefTest")
+    # print(df[df['alert_type'] == 'Hostile aircraft intrusion'])
 if __name__ == "__main__":
     main()

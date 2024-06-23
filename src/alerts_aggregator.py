@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
-from models import AlertCountPerDay, AlertType
+from models import AlertCountPerDay, AlertType, AlertCountPerHour
 from errors import WrongSettlementException, NoAlarmsException, InvalidSettlement
 from geoname_client import GeonameModule
 from datetime import time, datetime, timedelta
@@ -61,7 +61,7 @@ class AlertsAggregator:
                 alert_distribution = alert_distribution.to_dict()
                 distribution_list = []
                 for i in hour_list:
-                    alert_count_obj = AlertCountPerDay(hour=f"{i}:00", count=alert_distribution[i])
+                    alert_count_obj = AlertCountPerHour(hour=f"{i}:00", count=alert_distribution[i])
                     distribution_list.append(alert_count_obj)
                 return distribution_list
             elif is_settlement_exist:
@@ -81,7 +81,45 @@ class AlertsAggregator:
         except WrongSettlementException as ex:
             raise WrongSettlementException(ex)
        
+  
+
+    def get_alerts_distribution_per_day(self, settlement: str) -> list:
+        try:
+            settlement_list = self.create_user_settlement_list(settlement)
+            is_settlement_exist = GeonameModule.is_real_settlement(settlement)
+            if settlement_list:
+                # Filter the DataFrame by the given settlement list
+                filtered_df = self.df[self.df['settlement'].isin(settlement_list)]
+                
+                # Access the 'date' column of the DataFrame
+                filtered_df['date'] = pd.to_datetime(filtered_df['date'], format='%d.%m.%Y')
+                
+                # Group by 'date' and count the occurrences
+                alert_distribution = filtered_df['date'].value_counts().sort_index()
+                alert_distribution = alert_distribution.to_dict()
+                
+                distribution_list = []
+                for date, count in alert_distribution.items():
+                    alert_count_obj = AlertCountPerDay(date=date.strftime('%Y-%m-%d'), count=count)
+                    distribution_list.append(alert_count_obj)
+                return distribution_list
+            
+            elif is_settlement_exist:
+                raise NoAlarmsException(f"There were no alarms in the settlement: {settlement}")
+            else:
+                raise InvalidSettlement("You selected a Settlement that does not exist.")
+        except NoAlarmsException as ex:
+            raise NoAlarmsException(ex)   
+
+        except InvalidSettlement as ex:
+            raise InvalidSettlement(ex)   
+
+        except requests.exceptions.RequestException as ex:
+            raise requests.exceptions.RequestException(ex)
         
+        except WrongSettlementException as ex:
+            raise WrongSettlementException(ex)
+
         
 
     # This function receives df and settlement name then count the total amount of alerts in this settlement

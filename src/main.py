@@ -46,7 +46,7 @@ def get_api_key(api_key: str = Header(..., convert_underscores=False)):
 async def get_oref_alert(from_date: str, to_date: str, api_key: str = Depends(get_api_key)):
     try:
         #df = alert_indexer.arrange_alarms_within_csv(from_date, to_date)
-        sql_instance.delete_oref_table(OREF_TABLE)
+        #sql_instance.delete_oref_table(OREF_TABLE)
         df = alert_indexer.arrange_alarms_within_sql_database(from_date, to_date, OREF_TABLE)
         alert_aggregator.reload_data(df)
         return {"message": f"You updated the alerts sql database"}
@@ -116,8 +116,8 @@ async def get_most_hitted_settlement(alert_type:AlertType):
     return {"message": f"The area that suffers the most from {alert_type} alarms is: {poorest_city}"}
 
 
-@app.get("/get_distribution")
-async def get_distribution(settlement: str):
+@app.get("/get_hourly_distribution")
+async def get_hourly_distribution(settlement: str):
     try:
         return alert_aggregator.get_alerts_distribution(settlement)
     except NoAlarmsException as ex:
@@ -131,6 +131,21 @@ async def get_distribution(settlement: str):
     except Exception as ex:
         raise HTTPException(status_code=500, detail=f"Unknown Error: {ex}")
     
+@app.get("/get_distribution_per_day")
+async def get_distribution_per_day(settlement: str):
+    try:
+        return alert_aggregator.get_alerts_distribution_per_day(settlement)
+    except NoAlarmsException as ex:
+        return {"message" : str(ex)}
+    except InvalidSettlement as ex:
+        raise HTTPException(status_code=400, detail=str(ex))
+    except requests.exceptions.RequestException as ex:
+        raise HTTPException(status_code=402, detail=str(ex))
+    except WrongSettlementException as ex:
+        raise HTTPException(status_code=401, detail=str(ex)) 
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"Unknown Error: {ex}")
+
 
 @app.get("/get_all_settlement")
 async def get_all_settlement():        
