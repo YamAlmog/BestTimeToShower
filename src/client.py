@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import argparse
 from errors import WrongSettlementException, InvalidSettlement
 from datetime import datetime
-import threading
+from matplotlib.dates import DateFormatter
 
 
 def fetch_alert_distribution(settlement:str, host:str, port:str, endpoint: str):
@@ -18,51 +18,59 @@ def fetch_alert_distribution(settlement:str, host:str, port:str, endpoint: str):
         raise response.raise_for_status()
     
 
-
-def display_hourly_alerts_distribution(settlement:str, host:str, port:str):
+def get_hourly_alerts_distribution(settlement:str, host:str, port:str):
     try:    
         response = fetch_alert_distribution(settlement, host, port, "get_hourly_distribution")
-
         if "message" in response:
             sentence = response.get('message', '')
             print(sentence)
         else:    
-            response_list = response.json()
-            hour_vector = [d['hour'] for d in response_list]
-            alerts_count_vector = [d['count'] for d in response_list]
-            # Create a bar chart
-            plt.bar(hour_vector, alerts_count_vector, color='#E84D88')
-            # Rotate x-axis labels vertically
-            plt.xticks(rotation='vertical')
-            plt.xlabel('Hour')
-            plt.ylabel('Alerts Amount')
-            plt.title(f'Alerts Hourly Distribution in {settlement}')
-            plt.show()
+            hour_vector = [d['hour'] for d in response]
+            alerts_count_vector = [d['count'] for d in response]
+            return hour_vector, alerts_count_vector
     except requests.exceptions.HTTPError as ex:
         raise requests.exceptions.HTTPError(ex)
     
-def display_daily_alerts_distribution(settlement:str, host:str, port:str):
+def get_daily_alerts_distribution(settlement:str, host:str, port:str):
     try:    
         response = fetch_alert_distribution(settlement, host, port, "get_distribution_per_day")
-
         if "message" in response:
             sentence = response.get('message', '')
             print(sentence)
         else:    
             date_vector = [datetime.strptime(d['date'], '%Y-%m-%d').date() for d in response]
             alerts_count_vector = [d['count'] for d in response]
-            
-            # Create a bar chart
-            plt.bar(date_vector, alerts_count_vector, color='#E84D88')
-            # Rotate x-axis labels vertically
-            plt.xticks(rotation='vertical')
-            plt.xlabel('Date')
-            plt.ylabel('Alerts Amount')
-            plt.title(f'Alerts Daily Distribution in {settlement}')
-            plt.show()
+            return date_vector, alerts_count_vector
     except requests.exceptions.HTTPError as ex:
         raise requests.exceptions.HTTPError(ex)
 
+
+def display_alerts_distribution(settlement: str, host: str, port: str):
+    daily_dates, daily_counts = get_daily_alerts_distribution(settlement, host, port)
+    hourly_hours, hourly_counts = get_hourly_alerts_distribution(settlement, host, port)
+
+    fig, axs = plt.subplots(2, 1, figsize=(12, 12))
+    
+    if daily_dates and daily_counts:
+        axs[0].bar(daily_dates, daily_counts, color='#E84D88')
+        axs[0].set_xticks(daily_dates)
+        axs[0].set_xticklabels(daily_dates, rotation='vertical')
+        date_format = DateFormatter("%b %d")
+        axs[0].xaxis.set_major_formatter(date_format)
+        axs[0].set_xlabel('Date')
+        axs[0].set_ylabel('Alerts Amount')
+        axs[0].set_title(f'Alerts Daily Distribution in {settlement}')
+    
+    if hourly_hours and hourly_counts:
+        axs[1].bar(hourly_hours, hourly_counts, color='#4E84E8')
+        axs[1].set_xticks(hourly_hours)
+        axs[1].set_xticklabels(hourly_hours, rotation='vertical')
+        axs[1].set_xlabel('Hour')
+        axs[1].set_ylabel('Alerts Amount')
+        axs[1].set_title(f'Alerts Hourly Distribution in {settlement}')
+    
+    plt.tight_layout()
+    plt.show()
 
 def main():
     try:    
@@ -79,8 +87,8 @@ def main():
             settlement = input("Please input a settlement here --> ")
             if settlement == "exit":
                 break
-            display_daily_alerts_distribution(settlement, HOST, PORT) 
-            display_hourly_alerts_distribution(settlement, HOST, PORT)
+
+            display_alerts_distribution(settlement, HOST, PORT)
 
     except ValueError as ex:
         print(ex)
