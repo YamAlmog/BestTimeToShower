@@ -4,7 +4,7 @@ import warnings
 warnings.filterwarnings('ignore')
 from models import AlertCountPerDay, AlertType, AlertCountPerHour
 from errors import WrongSettlementException, NoAlarmsException, InvalidSettlement
-from geoname_client import GeonameModule
+from geoname_client import GeonameClient
 from datetime import time, datetime, timedelta
 import requests
 import os
@@ -47,7 +47,7 @@ class AlertsAggregator:
     def get_alerts_distribution(self, settlement: str) -> list:
         try:
             settlement_list= self.create_user_settlement_list(settlement)
-            is_settlement_exist = GeonameModule.is_real_settlement(settlement)
+            is_settlement_exist = GeonameClient.is_real_settlement(settlement)
             if settlement_list != []:
                 # Filtered the df by the given settlement list
                 filtered_df = self.df[self.df['settlement'].isin(settlement_list)]
@@ -86,7 +86,7 @@ class AlertsAggregator:
     def get_alerts_distribution_per_day(self, settlement: str) -> list:
         try:
             settlement_list = self.create_user_settlement_list(settlement)
-            is_settlement_exist = GeonameModule.is_real_settlement(settlement)
+            is_settlement_exist = GeonameClient.is_real_settlement(settlement)
             if settlement_list:
                 # Filter the DataFrame by the given settlement list
                 filtered_df = self.df[self.df['settlement'].isin(settlement_list)]
@@ -126,7 +126,7 @@ class AlertsAggregator:
     def alerts_count(self, settlement: str) -> int:
         try:
             user_settlement_list= self.create_user_settlement_list(settlement)
-            is_settlement_exist = GeonameModule.is_real_settlement(settlement)
+            is_settlement_exist = GeonameClient.is_real_settlement(settlement)
             
             if user_settlement_list != []:
                 # Filtered the df by the given settlement list
@@ -170,7 +170,7 @@ class AlertsAggregator:
     def create_adjusted_time_column(self, settlement :str, start_time : time, end_time :time):
         try:    
             settlement_list = self.create_user_settlement_list(settlement)
-            is_settlement_exist = GeonameModule.is_real_settlement(settlement)
+            is_settlement_exist = GeonameClient.is_real_settlement(settlement)
             # Extract the hour
             start_hour = start_time.hour
             end_hour = end_time.hour

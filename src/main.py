@@ -6,18 +6,15 @@ import requests
 from errors import OrefAPIException, WrongSettlementException, NoAlarmsException, InvalidSettlement, SqlDatabaseException
 from models import AlertsQueryInput, AlertType
 from datetime import datetime, timedelta
-from sql_database import SqlOrefDatabase
+from sql_database import OrefAlertsDB
 import os
 
 app = FastAPI()
-OREF_TABLE = "Oref_Alerts"
+OREF_TABLE = os.getenv("OREF_TABLE")
 ADMIN_API_KEY = os.getenv("ADMIN_API_KEY")
 CSV_FILE_PATH = os.getenv("ALERTS_DATA_FILE")
-# dataframe = pd.read_csv(CSV_FILE_PATH)
 alert_indexer = OrefAlertsIndexer()
-sql_instance = SqlOrefDatabase(OREF_TABLE)
-#alert_aggregator = None
-
+sql_instance = OrefAlertsDB(OREF_TABLE)
 
 
 # Define the function to be called on app initialization

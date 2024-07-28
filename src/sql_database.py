@@ -8,19 +8,10 @@ load_dotenv()
 user_name = os.getenv('PG_USER_NAME')
 user_password = os.getenv('PG_PASSWORD')
 
-class SqlOrefDatabase:
+class OrefAlertsDB:
     def __init__(self, table_name:str) -> None:
-        # # Initialize db connections 
-        # self.db_params = {
-        #     'host': 'localhost',
-        #     'port': 5432,
-        #     'database': 'OrefAlerts',
-        #     'user': user_name,
-        #     'password': user_password,
-        # }
         self.db_url = os.getenv("DATABASE_URL")
 
-    # def create_oref_alert_table(self, table_name:str):
         try:
             with psycopg2.connect(self.db_url) as conn:
                 cursor = conn.cursor()
@@ -35,8 +26,8 @@ class SqlOrefDatabase:
             raise SqlDatabaseException(ex)
 
 
-    def preparing_oref_data(self, data_list:list):
-        '''data_list look like this: 
+    def alets_json_to_tuple(self, alerts:list) -> list:
+        ''' alerts look like this: 
                     [
                     {'data': 'Gavim, Sapir College', 'date': '20.10.2023', 'time': '23:02:00', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Hostile aircraft intrusion', 'matrix_id': 1, 'rid': 23055},
                     {'data': 'Sderot, Ivim, Nir Am', 'date': '20.10.2023', 'time': '23:01:59', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23056},
@@ -45,15 +36,15 @@ class SqlOrefDatabase:
                     {'data': 'Ashkelon - South', 'date': '20.10.2023', 'time': '22:00:13', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23051},
                     {'data': 'Ashkelon Southern Industrial Zone', 'date': '20.10.2023', 'time': '22:00:12', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23052}
                     ]'''
-        for item in data_list:
+        for item in alerts:
             item['data'] = item['data'].lower()
-        data_tuples = [(d['data'], d['date'], d['time'], d['category_desc']) for d in data_list]
-        return data_tuples
+        alerts_tuples = [(d['data'], d['date'], d['time'], d['category_desc']) for d in alerts]
+        return alerts_tuples
 
 
-    def insert_alerts_to_oref_table(self, table_name:str, data_list:list):
+    def insert_alerts_to_db(self, table_name:str, alerts:list) -> None:
         try:
-            tuples_list = self.preparing_oref_data(data_list)
+            tuples_list = self.alets_json_to_tuple(alerts)
             with psycopg2.connect(self.db_url) as conn:
                 cursor = conn.cursor()
                 QUERY = f"INSERT INTO {table_name} (settlement, date, time, alert_type) VALUES (%s, %s, %s, %s);"
@@ -64,11 +55,9 @@ class SqlOrefDatabase:
             raise SqlDatabaseException(ex)
         
 
-    def retrieve_data_from_oref_table(self, table_name:str):
+    def retrieve_data_from_oref_table(self, table_name:str) -> pd.DataFrame:
         try:
             with psycopg2.connect(self.db_url) as conn:
-               
-                # Table exists, retrieve data
                 query = f"SELECT * FROM {table_name};"
                 df = pd.read_sql(query, conn)
                 return df
@@ -76,8 +65,10 @@ class SqlOrefDatabase:
         except Exception as ex:
             raise SqlDatabaseException(ex)
         
+
+
     # delete all values in table: table_name
-    def delete_oref_table(self, table_name:str):
+    def delete_alerts_table(self, table_name:str) -> None:
         try:
             with psycopg2.connect(self.db_url) as conn:
                 cursor = conn.cursor()
@@ -88,22 +79,3 @@ class SqlOrefDatabase:
         except Exception as ex:
             raise SqlDatabaseException(ex)
         
-
-def main():
-    oref_db = SqlOrefDatabase("Oref_Alerts")
-    list_of_data = [
-                {'data': 'Gavim, Sapir College', 'date': '20.10.2023', 'time': '23:02:00', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Hostile aircraft intrusion', 'matrix_id': 1, 'rid': 23055},
-                {'data': 'Sderot, Ivim, Nir Am', 'date': '20.10.2023', 'time': '23:01:59', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23056},
-                {'data': 'Ashkelon - North', 'date': '20.10.2023', 'time': '22:00:23', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23053},
-                {'data': 'Zikim', 'date': '20.10.2023', 'time': '22:00:22', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Hostile aircraft intrusion', 'matrix_id': 1, 'rid': 23054},
-                {'data': 'Ashkelon - South', 'date': '20.10.2023', 'time': '22:00:13', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23051},
-                {'data': 'Ashkelon Southern Industrial Zone', 'date': '20.10.2023', 'time': '22:00:12', 'alertDate': '2023-10-20T22:00:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23052}
-                ]
-    # oref_db.create_oref_alert_table("Oref_Alerts")
-    # # oref_db.insert_alerts_to_oref_table("Oref_Alerts", list_of_data)
-    # oref_db.delete_oref_table("Oref_Alerts")
-    
-    # df = oref_db.retrieve_data_from_oref_table("OrefTest")
-    # print(df[df['alert_type'] == 'Hostile aircraft intrusion'])
-if __name__ == "__main__":
-    main()

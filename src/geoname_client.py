@@ -9,7 +9,7 @@ GEONAMES_URL = os.getenv('GEONAMES_URL')
 USERNAME_GEONAMES = os.getenv('USERNAME_GEONAMES')
 
 
-class GeonameModule:
+class GeonameClient:
 
     # This function use geonames api and return True if the user settlement input is actually exist else returns False
     @staticmethod
@@ -22,15 +22,13 @@ class GeonameModule:
                     "fcode":"PPL" 
                 }
         
-        logging.debug(f'This are the parameters for the get request to GEONAME: {params}')
-        
         response = requests.get(GEONAMES_URL, params=params)
         if response.status_code == 200:    
             if response.json()['totalResultsCount'] == 0:
-                logging.debug(f'This is the response from GEONAME get request: {response.text}')
+                logging.debug(f'GEONAME request: {response.text}')
                 return False
             else:
-                logging.debug(f'This is the response from GEONAME get request: {response.text}')
+                logging.debug(f'GEONAME request: {response.text}')
                 return True
         else:
-            raise requests.exceptions.RequestException("An error occurred while try to use get request from GeoNames api")
+            raise requests.exceptions.RequestException("Error occurred while reaching to GeoNames API")
