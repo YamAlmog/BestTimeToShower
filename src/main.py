@@ -15,7 +15,7 @@ ADMIN_API_KEY = os.getenv("ADMIN_API_KEY")
 CSV_FILE_PATH = os.getenv("ALERTS_DATA_FILE")
 # dataframe = pd.read_csv(CSV_FILE_PATH)
 alert_indexer = OrefAlertsIndexer()
-sql_instance = SqlOrefDatabase()
+sql_instance = SqlOrefDatabase(OREF_TABLE)
 #alert_aggregator = None
 
 
@@ -45,8 +45,6 @@ def get_api_key(api_key: str = Header(..., convert_underscores=False)):
 @app.post("/sync_oref_alerts")
 async def get_oref_alert(from_date: str, to_date: str, api_key: str = Depends(get_api_key)):
     try:
-        #df = alert_indexer.arrange_alarms_within_csv(from_date, to_date)
-        #sql_instance.delete_oref_table(OREF_TABLE)
         df = alert_indexer.arrange_alarms_within_sql_database(from_date, to_date, OREF_TABLE)
         alert_aggregator.reload_data(df)
         return {"message": f"You updated the alerts sql database"}

@@ -43,11 +43,13 @@ class OrefAlertsIndexer:
                     'toDate': dest_date,
                     'mode': '0'}
         response = requests.get(URL, params=params)
-
+        print('-------------------------------try debugging 2-----------------------------')
+        print(response.text)
+        print(response.status_code)
         if response.status_code == 200:
             time.sleep(SLEEP_TIME)
             current_alerts_list = json.loads(response.text)
-            #missiles_alerts_list = [item for item in current_alerts_list if item['category_desc']=='Missiles']
+            
             return current_alerts_list 
 
         else:
@@ -89,9 +91,11 @@ class OrefAlertsIndexer:
 
     def arrange_alarms_within_sql_database(self, from_date: str, to_date: str, table_name:str):
         try:    
-            sql_instance = SqlOrefDatabase()
-            # create Oref Alerts table if not exist
-            sql_instance.create_oref_alert_table(table_name)
+            sql_instance = SqlOrefDatabase(table_name)
+            # # create Oref Alerts table if not exist
+            # sql_instance.create_oref_alert_table(table_name)
+            print('-------------------------------try debugging-----------------------------')
+            print(sql_instance.retrieve_data_from_oref_table(table_name))
 
             current_date = datetime.strptime(from_date, '%d.%m.%Y')
             target_date = datetime.strptime(to_date, '%d.%m.%Y')

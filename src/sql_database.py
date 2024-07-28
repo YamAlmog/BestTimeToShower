@@ -9,20 +9,20 @@ user_name = os.getenv('PG_USER_NAME')
 user_password = os.getenv('PG_PASSWORD')
 
 class SqlOrefDatabase:
-    def __init__(self) -> None:
-        # Initialize db connections 
-        self.db_params = {
-            'host': 'localhost',
-            'port': 5432,
-            'database': 'OrefAlerts',
-            'user': user_name,
-            'password': user_password,
-        }
+    def __init__(self, table_name:str) -> None:
+        # # Initialize db connections 
+        # self.db_params = {
+        #     'host': 'localhost',
+        #     'port': 5432,
+        #     'database': 'OrefAlerts',
+        #     'user': user_name,
+        #     'password': user_password,
+        # }
+        self.db_url = os.getenv("DATABASE_URL")
 
-
-    def create_oref_alert_table(self, table_name:str):
+    # def create_oref_alert_table(self, table_name:str):
         try:
-            with psycopg2.connect(**self.db_params) as conn:
+            with psycopg2.connect(self.db_url) as conn:
                 cursor = conn.cursor()
                 QUERY = f"""CREATE TABLE IF NOT EXISTS {table_name} 
                             (settlement VARCHAR(100) NOT NULL, 
@@ -54,7 +54,7 @@ class SqlOrefDatabase:
     def insert_alerts_to_oref_table(self, table_name:str, data_list:list):
         try:
             tuples_list = self.preparing_oref_data(data_list)
-            with psycopg2.connect(**self.db_params) as conn:
+            with psycopg2.connect(self.db_url) as conn:
                 cursor = conn.cursor()
                 QUERY = f"INSERT INTO {table_name} (settlement, date, time, alert_type) VALUES (%s, %s, %s, %s);"
                 cursor.executemany(QUERY, tuples_list)
@@ -66,7 +66,7 @@ class SqlOrefDatabase:
 
     def retrieve_data_from_oref_table(self, table_name:str):
         try:
-            with psycopg2.connect(**self.db_params) as conn:
+            with psycopg2.connect(self.db_url) as conn:
                
                 # Table exists, retrieve data
                 query = f"SELECT * FROM {table_name};"
@@ -79,7 +79,7 @@ class SqlOrefDatabase:
     # delete all values in table: table_name
     def delete_oref_table(self, table_name:str):
         try:
-            with psycopg2.connect(**self.db_params) as conn:
+            with psycopg2.connect(self.db_url) as conn:
                 cursor = conn.cursor()
                 QUERY = f"DELETE FROM {table_name};"
                 cursor.execute(QUERY)
@@ -90,7 +90,7 @@ class SqlOrefDatabase:
         
 
 def main():
-    oref_db = SqlOrefDatabase()
+    oref_db = SqlOrefDatabase("Oref_Alerts")
     list_of_data = [
                 {'data': 'Gavim, Sapir College', 'date': '20.10.2023', 'time': '23:02:00', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Hostile aircraft intrusion', 'matrix_id': 1, 'rid': 23055},
                 {'data': 'Sderot, Ivim, Nir Am', 'date': '20.10.2023', 'time': '23:01:59', 'alertDate': '2023-10-20T23:02:00', 'category': 1, 'category_desc': 'Missiles', 'matrix_id': 1, 'rid': 23056},
